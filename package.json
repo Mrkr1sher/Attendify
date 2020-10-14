@@ -1,0 +1,19 @@
+{
+  "name": "attendify",
+  "version": "1.0.0",
+  "description": "Project for WW-P Zoom",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mrkr1sher/Attendify.git"
+  },
+  "author": "Aditya Prasad, Krish Thawani",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Mrkr1sher/Attendify/issues"
+  },
+  "homepage": "https://github.com/Mrkr1sher/Attendify#readme"
+}
