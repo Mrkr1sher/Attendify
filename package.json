@@ -2,7 +2,7 @@
   "name": "attendify",
   "version": "1.0.0",
   "description": "Project for WW-P Zoom",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Mrkr1sher/Attendify/issues"
   },
-  "homepage": "https://github.com/Mrkr1sher/Attendify#readme"
+  "homepage": "https://github.com/Mrkr1sher/Attendify#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
