@@ -8,5 +8,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="my-express-server" />
+    <orderEntry type="module" module-name="WeatherProject" />
   </component>
 </module>
