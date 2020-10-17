@@ -1,0 +1,22 @@
+[
+  {
+    "duration": 0,
+    "start_time": "2020-10-17T21:00:27Z",
+    "timezone": "",
+    "topic": "Aditya Prasad's Personal Meeting Room",
+    "id": "5468788635",
+    "type": 4,
+    "uuid": "IRYV4FsjTxGJmfHPVg5Xrg==",
+    "host_id": "75szwM-qQrOhkj_9j6F8rQ",
+    "participants": [
+      {
+        "user_id": "16778240",
+        "user_name": "Aditya Prasad",
+        "id": "75szwM-qQrOhkj_9j6F8rQ",
+        "join_time": "2020-10-17T21:00:27Z",
+        "leave_time": "2020-10-17T21:00:37Z"
+      }
+    ],
+    "end_time": "2020-10-17T21:00:37Z"
+  }
+]

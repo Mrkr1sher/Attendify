@@ -1,3 +1,5 @@
+// Bring in environment secrets through dotenv
+require('dotenv/config')
 const fs = require('fs');
 // Use the request module to make HTTP requests from Node
 const request = require('request')
@@ -8,16 +10,18 @@ const app = express()
 
 const VERIFICATION_TOKEN = "nmuI2NTJSJK6nn1iHzUpUw";
 
+let meetings = [];
+
 app.use(express.json());
+
 app.get('/', (req, res) => {
 
     // Step 1: 
     // Check if the code parameter is in the url 
     // if an authorization code is available, the user has most likely been redirected from Zoom OAuth
     // if not, the user needs to be redirected to Zoom OAuth to authorize
-
     if (req.query.code) {
-        console.log(res.query.code);
+        console.log(req.query.code);
         // Step 3: 
         // Request an access token using the auth code
 
@@ -92,27 +96,54 @@ app.get('/', (req, res) => {
 
 // Set up a webhook listener for Webhook Event
 app.post('/', (req, res) => {
+    res.status(200);
     let webhook;
     try {
         webhook = req.body;
     } catch (err) {
-        res.status(400).send(`Webhook Error: ${err.message}`);
+        console.log(`Webhook Error: ${err.message}`);
     }
     // Check to see if you received the event or not.
     if (req.headers.authorization === VERIFICATION_TOKEN) {
-        res.status(200);
         switch (webhook.event){
             case "meeting.started":
                 console.log(`${webhook.payload.object.topic} started at time ${webhook.payload.object.start_time}`);
+                let meeting = webhook.payload.object;
+                meeting.participants = [];
+                meetings.push(meeting);
                 break;
             case "meeting.ended":
                 console.log(`${webhook.payload.object.topic} ended at time ${webhook.payload.object.end_time}`);
+                for (let meeting of meetings){
+                    if (meeting.uuid === webhook.payload.object.uuid){
+                        meeting.end_time = webhook.payload.object.end_time;
+                    }
+                }
+                // This is the part where we have to create a spreadsheet and place it in user's drive.
+                fs.writeFile("current-meetings.json", JSON.stringify(meetings, null, 2), (err) => {
+                    if (err) throw err;
+                    console.log('Meetings Updated!');
+                });
                 break;
             case "meeting.participant_joined":
-                console.log(`${webhook.payload.object.participant.user_name} joined ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.join_time}`)
+                console.log(`${webhook.payload.object.participant.user_name} joined ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.join_time}`);
+                for (let meeting of meetings){
+                    if (meeting.uuid === webhook.payload.object.uuid){
+                        meeting.participants.push(webhook.payload.object.participant);
+                    }
+                }
                 break;
             case "meeting.participant_left":
-                console.log(`${webhook.payload.object.participant.user_name} left ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.leave_time}`)
+                console.log(`${webhook.payload.object.participant.user_name} left ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.leave_time}`);
+                for (let meeting of meetings){
+                    if (meeting.uuid === webhook.payload.object.uuid){
+                        for (let participant of meeting.participants){
+                            if (participant.user_id === webhook.payload.object.participant.user_id) {
+                                participant.leave_time = webhook.payload.object.participant.leave_time;
+                            }
+                        }
+                    }
+                }
                 break;
         }
         let filename = `${webhook.event}.json`;
