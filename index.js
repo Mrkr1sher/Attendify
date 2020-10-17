@@ -92,17 +92,20 @@ app.get('/', (req, res) => {
 
 // Set up a webhook listener for Webhook Event
 app.post('/', (req, res) => {
-
-    let event;
+    let webhook;
     try {
-        event = JSON.stringify(req.body, null, 2);
+        webhook = req.body;
     } catch (err) {
         res.status(400).send(`Webhook Error: ${err.message}`);
     }
     // Check to see if you received the event or not.
     if (req.headers.authorization === VERIFICATION_TOKEN) {
         res.status(200);
-        fs.writeFile('zoom_webhook_request.json', event, (err) => {
+        if (webhook.event === "meeting.ended"){
+            console.log("Meeting Ended");
+        }
+        let filename = `${webhook.event}.json`;
+        fs.writeFile(filename, JSON.stringify(webhook, null, 2), (err) => {
             if (err) throw err;
             console.log('File Saved!');
         });

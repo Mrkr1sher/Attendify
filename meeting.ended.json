@@ -1,0 +1,17 @@
+{
+  "event": "meeting.ended",
+  "payload": {
+    "account_id": "6XJuhKCHRjmRg1otEnHGgw",
+    "object": {
+      "duration": 0,
+      "start_time": "2020-10-17T18:32:45Z",
+      "timezone": "",
+      "end_time": "2020-10-17T18:32:49Z",
+      "topic": "Aditya Prasad's Personal Meeting Room",
+      "id": "5468788635",
+      "type": 4,
+      "uuid": "m/pbzeUETZClyyNUnjkYLQ==",
+      "host_id": "75szwM-qQrOhkj_9j6F8rQ"
+    }
+  }
+}

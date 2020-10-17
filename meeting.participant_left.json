@@ -1,0 +1,22 @@
+{
+  "payload": {
+    "account_id": "6XJuhKCHRjmRg1otEnHGgw",
+    "object": {
+      "uuid": "m/pbzeUETZClyyNUnjkYLQ==",
+      "participant": {
+        "leave_time": "2020-10-17T18:32:49Z",
+        "user_id": "16778240",
+        "user_name": "Aditya Prasad",
+        "id": "75szwM-qQrOhkj_9j6F8rQ"
+      },
+      "id": "5468788635",
+      "type": 4,
+      "topic": "Aditya Prasad's Personal Meeting Room",
+      "host_id": "75szwM-qQrOhkj_9j6F8rQ",
+      "duration": 0,
+      "start_time": "2020-10-17T18:32:45Z",
+      "timezone": ""
+    }
+  },
+  "event": "meeting.participant_left"
+}
