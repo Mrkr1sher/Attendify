@@ -102,7 +102,7 @@ app.post('/', (req, res) => {
     // Check to see if you received the event or not.
     if (req.headers.authorization === VERIFICATION_TOKEN) {
         res.status(200);
-        fs.writeFile('zoom_webhook_request.txt', event, (err) => {
+        fs.writeFile('zoom_webhook_request.json', event, (err) => {
             if (err) throw err;
             console.log('File Saved!');
         });
