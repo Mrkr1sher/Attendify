@@ -1,6 +1,4 @@
-// Bring in environment secrets through dotenv
-require('dotenv/config')
-
+const fs = require('fs');
 // Use the request module to make HTTP requests from Node
 const request = require('request')
 
@@ -8,7 +6,9 @@ const request = require('request')
 const express = require('express')
 const app = express()
 
+const VERIFICATION_TOKEN = "nmuI2NTJSJK6nn1iHzUpUw";
 
+app.use(express.json());
 app.get('/', (req, res) => {
 
     // Step 1: 
@@ -17,14 +17,14 @@ app.get('/', (req, res) => {
     // if not, the user needs to be redirected to Zoom OAuth to authorize
 
     if (req.query.code) {
-
+        console.log(res.query.code);
         // Step 3: 
         // Request an access token using the auth code
 
         let url = 'https://zoom.us/oauth/token?grant_type=authorization_code&code=' + req.query.code + '&redirect_uri=' + process.env.redirectURL;
 
         request.post(url, (error, response, body) => {
-
+            console.log(body);
             // Parse response to JSON
             body = JSON.parse(body);
 
@@ -88,6 +88,26 @@ app.get('/', (req, res) => {
     // Step 2: 
     // If no authorization code is available, redirect to Zoom OAuth to authorize
     res.redirect('https://zoom.us/oauth/authorize?response_type=code&client_id=' + process.env.clientID + '&redirect_uri=' + process.env.redirectURL)
-})
+});
+
+// Set up a webhook listener for Webhook Event
+app.post('/', (req, res) => {
+
+    let event;
+    try {
+        event = JSON.stringify(req.body);
+    } catch (err) {
+        res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+    // Check to see if you received the event or not.
+    if (req.headers.authorization === VERIFICATION_TOKEN) {
+        res.status(200);
+        fs.writeFile('zoom_webhook_request.txt', event, (err) => {
+            if (err) throw err;
+            console.log('File Saved!');
+        });
+    }
+});
+
 
 app.listen(4000, () => console.log(`Zoom Hello World app listening at PORT: 4000`))
