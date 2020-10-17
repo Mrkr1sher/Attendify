@@ -101,8 +101,19 @@ app.post('/', (req, res) => {
     // Check to see if you received the event or not.
     if (req.headers.authorization === VERIFICATION_TOKEN) {
         res.status(200);
-        if (webhook.event === "meeting.ended"){
-            console.log("Meeting Ended");
+        switch (webhook.event){
+            case "meeting.started":
+                console.log(`${webhook.payload.object.topic} started at time ${webhook.payload.object.start_time}`);
+                break;
+            case "meeting.ended":
+                console.log(`${webhook.payload.object.topic} ended at time ${webhook.payload.object.end_time}`);
+                break;
+            case "meeting.participant_joined":
+                console.log(`${webhook.payload.object.participant.user_name} joined ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.join_time}`)
+                break;
+            case "meeting.participant_left":
+                console.log(`${webhook.payload.object.participant.user_name} left ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.leave_time}`)
+                break;
         }
         let filename = `${webhook.event}.json`;
         fs.writeFile(filename, JSON.stringify(webhook, null, 2), (err) => {
