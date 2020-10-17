@@ -2,3 +2,5 @@ node_modules/
 .idea/
 .env
 ngrok
+zoom-oauth-sample-app/
+ngrok.exe
