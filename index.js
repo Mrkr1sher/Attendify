@@ -95,7 +95,7 @@ app.post('/', (req, res) => {
 
     let event;
     try {
-        event = JSON.stringify(req.body);
+        event = JSON.stringify(req.body, null, 2);
     } catch (err) {
         res.status(400).send(`Webhook Error: ${err.message}`);
     }
