@@ -146,11 +146,11 @@ app.post('/', (req, res) => {
                 }
                 break;
         }
-        let filename = `${webhook.event}.json`;
-        fs.writeFile(filename, JSON.stringify(webhook, null, 2), (err) => {
-            if (err) throw err;
-            console.log('File Saved!');
-        });
+        // let filename = `${webhook.event}.json`;
+        // fs.writeFile(filename, JSON.stringify(webhook, null, 2), (err) => {
+        //     if (err) throw err;
+        //     console.log('File Saved!');
+        // });
     }
 });
 
