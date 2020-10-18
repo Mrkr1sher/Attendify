@@ -8,7 +8,7 @@ const request = require('request')
 const express = require('express')
 const app = express()
 
-const VERIFICATION_TOKEN = "nmuI2NTJSJK6nn1iHzUpUw";
+const VERIFICATION_TOKEN = "zs1zG1obSoiSMTRjgplIOA";
 
 let meetings = [];
 
@@ -21,20 +21,13 @@ app.get('/', (req, res) => {
     // if an authorization code is available, the user has most likely been redirected from Zoom OAuth
     // if not, the user needs to be redirected to Zoom OAuth to authorize
     if (req.query.code) {
-        console.log(req.query.code);
         // Step 3: 
         // Request an access token using the auth code
 
         let url = 'https://zoom.us/oauth/token?grant_type=authorization_code&code=' + req.query.code + '&redirect_uri=' + process.env.redirectURL;
 
         request.post(url, (error, response, body) => {
-            console.log(body);
-            // Parse response to JSON
             body = JSON.parse(body);
-
-            // Logs your access and refresh tokens in the browser
-            console.log(`access_token: ${body.access_token}`);
-            console.log(`refresh_token: ${body.refresh_token}`);
 
             if (body.access_token) {
 
@@ -49,10 +42,7 @@ app.get('/', (req, res) => {
                     if (error) {
                         console.log('API Response Error: ', error)
                     } else {
-                        body = JSON.parse(body);
-                        // Display response in console
-                        console.log('API call ', body);
-                        // Display response in browser
+                        body = JSON.parse(body)
                         var JSONResponse = '<pre><code>' + JSON.stringify(body, null, 2) + '</code></pre>'
                         res.send(`
                             <style>
@@ -98,6 +88,7 @@ app.get('/', (req, res) => {
 app.post('/', (req, res) => {
     res.status(200);
     let webhook;
+    let meeting;
     try {
         webhook = req.body;
     } catch (err) {
@@ -108,7 +99,7 @@ app.post('/', (req, res) => {
         switch (webhook.event){
             case "meeting.started":
                 console.log(`${webhook.payload.object.topic} started at time ${webhook.payload.object.start_time}`);
-                let meeting = webhook.payload.object;
+                meeting = webhook.payload.object;
                 meeting.participants = [];
                 meetings.push(meeting);
                 break;

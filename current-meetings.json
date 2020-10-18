@@ -1,29 +1,178 @@
 [
   {
     "duration": 0,
-    "start_time": "2020-10-17T21:22:57Z",
+    "start_time": "2020-10-18T03:06:04Z",
     "timezone": "",
-    "topic": "Aditya Prasad's Personal Meeting Room",
-    "id": "5468788635",
-    "type": 4,
-    "uuid": "G2GEjS7mTkeswCueV4bKzw==",
-    "host_id": "75szwM-qQrOhkj_9j6F8rQ",
+    "topic": "Krish Thawani's Zoom Meeting",
+    "id": "77575236384",
+    "type": 1,
+    "uuid": "wIMwng5USjCRbd0ONcp/jA==",
+    "host_id": "D30SoZWLT-ySJM5UEXcJTA",
     "participants": [
       {
         "user_id": "16778240",
-        "user_name": "Aditya Prasad",
-        "id": "75szwM-qQrOhkj_9j6F8rQ",
-        "join_time": "2020-10-17T21:22:57Z",
-        "leave_time": "2020-10-17T21:23:47Z"
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:06:04Z",
+        "leave_time": "2020-10-18T04:12:19Z"
       },
       {
-        "user_id": "16780288",
-        "user_name": "Codivate",
-        "id": "YmBcEKBuSZCEfKLex8rU2g",
-        "join_time": "2020-10-17T21:23:41Z",
-        "leave_time": "2020-10-17T21:23:47Z"
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:06:04Z",
+        "leave_time": "2020-10-18T04:12:19Z"
+      },
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:06:04Z",
+        "leave_time": "2020-10-18T04:12:19Z"
       }
     ],
-    "end_time": "2020-10-17T21:23:47Z"
+    "end_time": "2020-10-18T04:12:19Z"
+  },
+  {
+    "duration": 0,
+    "start_time": "2020-10-18T03:01:51Z",
+    "timezone": "",
+    "topic": "Krish Thawani's Zoom Meeting",
+    "id": "75401461329",
+    "type": 1,
+    "uuid": "6sDqWXnOSIKSAqxcNQ3qXg==",
+    "host_id": "D30SoZWLT-ySJM5UEXcJTA",
+    "participants": [
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:01:51Z",
+        "leave_time": "2020-10-18T03:02:01Z"
+      },
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:01:51Z"
+      },
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:01:51Z"
+      }
+    ],
+    "end_time": "2020-10-18T03:02:01Z"
+  },
+  {
+    "duration": 0,
+    "start_time": "2020-10-18T03:06:04Z",
+    "timezone": "",
+    "topic": "Krish Thawani's Zoom Meeting",
+    "id": "77575236384",
+    "type": 1,
+    "uuid": "wIMwng5USjCRbd0ONcp/jA==",
+    "host_id": "D30SoZWLT-ySJM5UEXcJTA",
+    "participants": [
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:06:04Z",
+        "leave_time": "2020-10-18T04:12:19Z"
+      },
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:06:04Z",
+        "leave_time": "2020-10-18T04:12:19Z"
+      }
+    ],
+    "end_time": "2020-10-18T04:12:19Z"
+  },
+  {
+    "duration": 0,
+    "start_time": "2020-10-18T02:56:32Z",
+    "timezone": "",
+    "topic": "Krish Thawani's Zoom Meeting",
+    "id": "79612974859",
+    "type": 1,
+    "uuid": "l9WNMoMBQf+X98MCYnEcyw==",
+    "host_id": "D30SoZWLT-ySJM5UEXcJTA",
+    "participants": [
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T02:56:32Z",
+        "leave_time": "2020-10-18T02:57:03Z"
+      }
+    ]
+  },
+  {
+    "duration": 0,
+    "start_time": "2020-10-18T03:01:51Z",
+    "timezone": "",
+    "topic": "Krish Thawani's Zoom Meeting",
+    "id": "75401461329",
+    "type": 1,
+    "uuid": "6sDqWXnOSIKSAqxcNQ3qXg==",
+    "host_id": "D30SoZWLT-ySJM5UEXcJTA",
+    "participants": [
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:01:51Z"
+      },
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:01:51Z"
+      }
+    ],
+    "end_time": "2020-10-18T03:02:01Z"
+  },
+  {
+    "duration": 0,
+    "start_time": "2020-10-18T03:06:04Z",
+    "timezone": "",
+    "topic": "Krish Thawani's Zoom Meeting",
+    "id": "77575236384",
+    "type": 1,
+    "uuid": "wIMwng5USjCRbd0ONcp/jA==",
+    "host_id": "D30SoZWLT-ySJM5UEXcJTA",
+    "participants": [
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:06:04Z",
+        "leave_time": "2020-10-18T04:12:19Z"
+      }
+    ],
+    "end_time": "2020-10-18T04:12:19Z"
+  },
+  {
+    "duration": 0,
+    "start_time": "2020-10-18T03:01:51Z",
+    "timezone": "",
+    "topic": "Krish Thawani's Zoom Meeting",
+    "id": "75401461329",
+    "type": 1,
+    "uuid": "6sDqWXnOSIKSAqxcNQ3qXg==",
+    "host_id": "D30SoZWLT-ySJM5UEXcJTA",
+    "participants": [
+      {
+        "user_id": "16778240",
+        "user_name": "Krish Thawani",
+        "id": "D30SoZWLT-ySJM5UEXcJTA",
+        "join_time": "2020-10-18T03:01:51Z"
+      }
+    ],
+    "end_time": "2020-10-18T03:02:01Z"
   }
 ]
