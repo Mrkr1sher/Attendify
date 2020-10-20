@@ -81,30 +81,42 @@ app.get('/', (req, res) => {
     }
     async function authenticate() {
         return new Promise((resolve, reject) => {
-
+            console.log("ayo chill chico");
             // redirect to the google oauth url
-            res.redirect(oauth2Client.generateAuthUrl({
+            const authorizeUrl = oauth2Client.generateAuthUrl({
                 access_type: 'offline',
                 scope: ['https://www.googleapis.com/auth/plus.me'].join(' '),
-            }));
+            });
+            res.redirect(authorizeUrl);
+            console.log("what");
 
             const server = http
                 .createServer(async (req, res) => {
+                    console.log("95");
                     try {
+                        console.log("trying");
                         if (req.url.indexOf('/oauth2callback') > -1) {
+                            console.log("yep");
                             const qs = new url.URL(req.url, NGROK_LINK)
                                 .searchParams;
                             res.end('Authentication successful! Please return to the console.');
                             server.destroy();
                             const { tokens } = await oauth2Client.getToken(qs.get('code'));
                             oauth2Client.credentials = tokens; // eslint-disable-line require-atomic-updates
+                            console.log(tokens);
                             resolve(oauth2Client);
                         }
                     } catch (e) {
+                        console.log("frown");
                         reject(e);
                     }
-                })
+                }).listen(3000, () => {
+                    // open the browser to the authorize url to start the workflow
+                    opn(authorizeUrl, {wait: false}).then(cp => cp.unref());
+                });
+            console.log("115");
             destroyer(server);
+            console.log("117");
         });
     }
 
