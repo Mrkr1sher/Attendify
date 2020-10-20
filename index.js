@@ -1,20 +1,22 @@
 // Bring in environment secrets through dotenv
-require('dotenv/config')
-const fs = require('fs');
-const request = require('request')
-const path = require('path');
-const http = require('http');
-const url = require('url');
-const opn = require('open');
-const destroyer = require('server-destroy');
-
+require("dotenv/config")
+const fs = require("fs");
+const request = require("request")
 // Run the express app
-const express = require('express')
+const express = require("express")
 const app = express()
 
 //google api
-const { google } = require('googleapis');
-const plus = google.plus('v1');
+const { google } = require("googleapis");
+const oauth2Client = new google.auth.OAuth2(
+    "415486598373-tkj6namefvk0pks5atk5s7vruvfo7f13.apps.googleusercontent.com",
+    "wSxLqwP_1lXYFmkfECe6YPyK",
+    "http://3415d37069a7.ngrok.io/oauth2callback"
+);
+const scopes = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive.file"
+];
 
 const VERIFICATION_TOKEN = "zs1zG1obSoiSMTRjgplIOA";
 const NGROK_LINK = "http://3415d37069a7.ngrok.io"
@@ -23,23 +25,7 @@ let meetings = [];
 
 app.use(express.json());
 
-// To use OAuth2 authentication, we need access to a a CLIENT_ID, CLIENT_SECRET, AND REDIRECT_URI.  To get these credentials for your application, visit https://console.cloud.google.com/apis/credentials.
-const keyPath = path.join(__dirname, 'oauth2.keys.json');
-let keys = { redirect_uris: [''] };
-if (fs.existsSync(keyPath)) {
-    keys = require(keyPath).web;
-}
-
-// Create a new OAuth2 client with the configured keys.
-const oauth2Client = new google.auth.OAuth2(
-    keys.client_id,
-    keys.client_secret,
-    keys.redirect_uris[0]
-);
-
-google.options({ auth: oauth2Client });
-
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
 
     // Step 1: 
     // Check if the code parameter is in the url 
@@ -49,7 +35,7 @@ app.get('/', (req, res) => {
         // Step 3: 
         // Request an access token using the auth code
 
-        let url = 'https://zoom.us/oauth/token?grant_type=authorization_code&code=' + req.query.code + '&redirect_uri=' + process.env.redirectURL;
+        let url = "https://zoom.us/oauth/token?grant_type=authorization_code&code=" + req.query.code + "&redirect_uri=" + process.env.redirectURL;
 
         request.post(url, (error, response, body) => {
             body = JSON.parse(body);
@@ -63,16 +49,16 @@ app.get('/', (req, res) => {
                 // The `/me` context restricts an API call to the user the token belongs to
                 // This helps make calls to user-specific endpoints instead of storing the userID
 
-                request.get('https://api.zoom.us/v2/users/me', (error, response, body) => {
+                request.get("https://api.zoom.us/v2/users/me", (error, response, body) => {
                     if (error) {
-                        console.log('API Response Error: ', error)
+                        console.log("API Response Error: ", error)
                     } else {
                         authenticate().catch(console.error);
                     }
                 }).auth(null, null, true, body.access_token);
 
             } else {
-                // Handle errors, something's gone wrong!
+                // Handle errors, something"s gone wrong!
             }
 
         }).auth(process.env.clientID, process.env.clientSecret);
@@ -80,53 +66,27 @@ app.get('/', (req, res) => {
 
     }
     async function authenticate() {
-        return new Promise((resolve, reject) => {
-            console.log("ayo chill chico");
-            // redirect to the google oauth url
-            const authorizeUrl = oauth2Client.generateAuthUrl({
-                access_type: 'offline',
-                scope: ['https://www.googleapis.com/auth/plus.me'].join(' '),
-            });
-            res.redirect(authorizeUrl);
-            console.log("what");
-
-            const server = http
-                .createServer(async (req, res) => {
-                    console.log("95");
-                    try {
-                        console.log("trying");
-                        if (req.url.indexOf('/oauth2callback') > -1) {
-                            console.log("yep");
-                            const qs = new url.URL(req.url, NGROK_LINK)
-                                .searchParams;
-                            res.end('Authentication successful! Please return to the console.');
-                            server.destroy();
-                            const { tokens } = await oauth2Client.getToken(qs.get('code'));
-                            oauth2Client.credentials = tokens; // eslint-disable-line require-atomic-updates
-                            console.log(tokens);
-                            resolve(oauth2Client);
-                        }
-                    } catch (e) {
-                        console.log("frown");
-                        reject(e);
-                    }
-                }).listen(3000, () => {
-                    // open the browser to the authorize url to start the workflow
-                    opn(authorizeUrl, {wait: false}).then(cp => cp.unref());
-                });
-            console.log("115");
-            destroyer(server);
-            console.log("117");
+        const authUrl = oauth2Client.generateAuthUrl({
+            // "online" (default) or "offline" (gets refresh_token)
+            access_type: "offline",
+            // response_type: "code",
+            scope: scopes,
         });
+        res.redirect(authUrl)
+        // This will provide an object with the access_token and refresh_token.
+        // Save these somewhere safe so they can be used at a later time.
+        const { tokens } = await oauth2Client.getToken(authUrl);
+        oauth2Client.setCredentials(tokens);
+        console.log(tokens);
     }
 
     // Step 2: 
     // If no authorization code is available, redirect to Zoom OAuth to authorize
-    res.redirect('https://zoom.us/oauth/authorize?response_type=code&client_id=' + process.env.clientID + '&redirect_uri=' + process.env.redirectURL);
+    res.redirect("https://zoom.us/oauth/authorize?response_type=code&client_id=" + process.env.clientID + "&redirect_uri=" + process.env.redirectURL);
 });
 
 // Set up a webhook listener for Webhook Event
-app.post('/', (req, res) => {
+app.post("/", (req, res) => {
     res.status(200).end();
     let webhook;
     let meeting;
@@ -151,10 +111,10 @@ app.post('/', (req, res) => {
                         meeting.end_time = webhook.payload.object.end_time;
                     }
                 }
-                // This is the part where we have to create a spreadsheet and place it in user's drive.
+                // This is the part where we have to create a spreadsheet and place it in user"s drive.
                 fs.writeFile("current-meetings.json", JSON.stringify(meetings, null, 2), (err) => {
                     if (err) throw err;
-                    console.log('Meetings Updated!');
+                    console.log("Meetings Updated!");
                 });
                 break;
             case "meeting.participant_joined":
