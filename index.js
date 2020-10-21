@@ -9,17 +9,15 @@ const app = express()
 //google api
 const { google } = require("googleapis");
 const oauth2Client = new google.auth.OAuth2(
-    "415486598373-tkj6namefvk0pks5atk5s7vruvfo7f13.apps.googleusercontent.com",
-    "wSxLqwP_1lXYFmkfECe6YPyK",
-    "http://3415d37069a7.ngrok.io/oauth2callback"
+    process.env.googleClientID,
+    process.env.googleClientSecret,
+    process.env.googleRedirectURL
 );
 const scopes = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file"
 ];
 
-const VERIFICATION_TOKEN = "zs1zG1obSoiSMTRjgplIOA";
-const NGROK_LINK = "http://3415d37069a7.ngrok.io"
 
 let meetings = [];
 
@@ -35,7 +33,7 @@ app.get("/", (req, res) => {
         // Step 3: 
         // Request an access token using the auth code
 
-        let url = "https://zoom.us/oauth/token?grant_type=authorization_code&code=" + req.query.code + "&redirect_uri=" + process.env.redirectURL;
+        let url = "https://zoom.us/oauth/token?grant_type=authorization_code&code=" + req.query.code + "&redirect_uri=" + process.env.zoomRedirectURL;
 
         request.post(url, (error, response, body) => {
             body = JSON.parse(body);
@@ -61,7 +59,7 @@ app.get("/", (req, res) => {
                 // Handle errors, something"s gone wrong!
             }
 
-        }).auth(process.env.clientID, process.env.clientSecret);
+        }).auth(process.env.zoomClientID, process.env.zoomClientSecret);
         return;
 
     }
@@ -72,7 +70,7 @@ app.get("/", (req, res) => {
             // response_type: "code",
             scope: scopes,
         });
-        res.redirect(authUrl)
+        // res.redirect(authUrl)
         // This will provide an object with the access_token and refresh_token.
         // Save these somewhere safe so they can be used at a later time.
         const { tokens } = await oauth2Client.getToken(authUrl);
@@ -82,7 +80,7 @@ app.get("/", (req, res) => {
 
     // Step 2: 
     // If no authorization code is available, redirect to Zoom OAuth to authorize
-    res.redirect("https://zoom.us/oauth/authorize?response_type=code&client_id=" + process.env.clientID + "&redirect_uri=" + process.env.redirectURL);
+    res.redirect("https://zoom.us/oauth/authorize?response_type=code&client_id=" + process.env.clientID + "&redirect_uri=" + process.env.zoomRedirectURL);
 });
 
 // Set up a webhook listener for Webhook Event
@@ -96,7 +94,7 @@ app.post("/", (req, res) => {
         console.log(`Webhook Error: ${err.message}`);
     }
     // Check to see if you received the event or not.
-    if (req.headers.authorization === VERIFICATION_TOKEN) {
+    if (req.headers.authorization === process.env.zoomVerificationToken) {
         switch (webhook.event) {
             case "meeting.started":
                 console.log(`${webhook.payload.object.topic} started at time ${webhook.payload.object.start_time}`);
