@@ -81,13 +81,14 @@ app.get("/", (req, res) => {
 
 app.get("/oauth2callback", async (req, res) => {
     if (req.query.code){
+        let code = req.query.code;
         console.log(req.query);
         // This will provide an object with the access_token and refresh_token.
         // Save these somewhere safe so they can be used at a later time.
-        const { tokens } = await oauth2Client.getToken(res.query.code).catch((e) => { console.error(e); });
-        // TO BE USED WHEN MEETING ENDS  oauth2Client.setCredentials(tokens);
+        const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); });
+        // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
         console.log(tokens);
-        res.end();
+        res.send("Successful");
     }
 });
 
