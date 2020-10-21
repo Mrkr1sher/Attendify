@@ -35,6 +35,16 @@ app.get("/", (req, res) => {
 
         let url = "https://zoom.us/oauth/token?grant_type=authorization_code&code=" + req.query.code + "&redirect_uri=" + process.env.zoomRedirectURL;
 
+        function authenticate() {
+            const authUrl = oauth2Client.generateAuthUrl({
+                // "online" (default) or "offline" (gets refresh_token)
+                access_type: "offline",
+                // response_type: "code",
+                scope: scopes,
+            });
+            res.redirect(authUrl)
+        }
+
         request.post(url, (error, response, body) => {
             body = JSON.parse(body);
 
@@ -51,7 +61,7 @@ app.get("/", (req, res) => {
                     if (error) {
                         console.log("API Response Error: ", error)
                     } else {
-                        authenticate().catch(console.error);
+                        authenticate();
                     }
                 }).auth(null, null, true, body.access_token);
 
@@ -63,24 +73,22 @@ app.get("/", (req, res) => {
         return;
 
     }
-    async function authenticate() {
-        const authUrl = oauth2Client.generateAuthUrl({
-            // "online" (default) or "offline" (gets refresh_token)
-            access_type: "offline",
-            // response_type: "code",
-            scope: scopes,
-        });
-        // res.redirect(authUrl)
-        // This will provide an object with the access_token and refresh_token.
-        // Save these somewhere safe so they can be used at a later time.
-        const { tokens } = await oauth2Client.getToken(authUrl);
-        oauth2Client.setCredentials(tokens);
-        console.log(tokens);
-    }
 
     // Step 2: 
     // If no authorization code is available, redirect to Zoom OAuth to authorize
     res.redirect("https://zoom.us/oauth/authorize?response_type=code&client_id=" + process.env.clientID + "&redirect_uri=" + process.env.zoomRedirectURL);
+});
+
+app.get("/oauth2callback", async (req, res) => {
+    if (req.query.code){
+        console.log(req.query);
+        // This will provide an object with the access_token and refresh_token.
+        // Save these somewhere safe so they can be used at a later time.
+        const { tokens } = await oauth2Client.getToken(res.query.code).catch((e) => { console.error(e); });
+        // TO BE USED WHEN MEETING ENDS  oauth2Client.setCredentials(tokens);
+        console.log(tokens);
+        res.end();
+    }
 });
 
 // Set up a webhook listener for Webhook Event
