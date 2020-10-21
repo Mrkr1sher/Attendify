@@ -18,8 +18,7 @@ const scopes = [
     "https://www.googleapis.com/auth/drive.file"
 ];
 
-
-let meetings = [];
+let users = [];
 
 app.use(express.json());
 
@@ -58,9 +57,20 @@ app.get("/", (req, res) => {
                 // This helps make calls to user-specific endpoints instead of storing the userID
 
                 request.get("https://api.zoom.us/v2/users/me", (error, response, body) => {
+                    body = JSON.parse(body);
                     if (error) {
                         console.log("API Response Error: ", error)
                     } else {
+                        console.log(body);
+                        let user = {
+                            id: body.id,
+                            meetings: [],
+                            zoomCreds: {
+                                refresh_token: body.refresh_token,
+                                access_token: body.access_token
+                            }
+                        };
+                        users.push(user)
                         authenticate();
                     }
                 }).auth(null, null, true, body.access_token);
@@ -87,6 +97,7 @@ app.get("/oauth2callback", async (req, res) => {
         // Save these somewhere safe so they can be used at a later time.
         const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); });
         // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
+        users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
         console.log(tokens);
         res.send("Successful");
     }
@@ -109,7 +120,11 @@ app.post("/", (req, res) => {
                 console.log(`${webhook.payload.object.topic} started at time ${webhook.payload.object.start_time}`);
                 meeting = webhook.payload.object;
                 meeting.participants = [];
-                meetings.push(meeting);
+                for (let user of users){
+                    if (user.id === meeting.host_id){
+                        user.meetings.push(meeting);
+                    }
+                }
                 break;
             case "meeting.ended":
                 console.log(`${webhook.payload.object.topic} ended at time ${webhook.payload.object.end_time}`);
@@ -126,9 +141,13 @@ app.post("/", (req, res) => {
                 break;
             case "meeting.participant_joined":
                 console.log(`${webhook.payload.object.participant.user_name} joined ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.join_time}`);
-                for (let meeting of meetings) {
-                    if (meeting.uuid === webhook.payload.object.uuid) {
-                        meeting.participants.push(webhook.payload.object.participant);
+                for (let user of users){ // run through users
+                    if (user.id === webhook.payload.object.host_id){ // when a user is the host of the meeting
+                        for (let meeting of user.meetings) { // run through meetings
+                            if (meeting.uuid === webhook.payload.object.uuid) { // when a meeting is the one the participant joined
+                                meeting.participants.push(webhook.payload.object.participant); // add the participant to meeting object
+                            }
+                        }
                     }
                 }
                 break;
