@@ -47,6 +47,8 @@ app.get("/", (req, res) => {
         request.post(url, (error, response, body) => {
             body = JSON.parse(body);
 
+            let tokenData = body;
+
             if (body.access_token) {
 
                 // Step 4:
@@ -66,8 +68,8 @@ app.get("/", (req, res) => {
                             id: body.id,
                             meetings: [],
                             zoomCreds: {
-                                refresh_token: body.refresh_token,
-                                access_token: body.access_token
+                                refresh_token: tokenData.refresh_token,
+                                access_token: tokenData.access_token
                             }
                         };
                         users.push(user)
@@ -96,13 +98,21 @@ app.get("/oauth2callback", async (req, res) => {
         // Save these somewhere safe so they can be used at a later time.
         const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); });
         // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
-        users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
+        if (tokens.refresh_token){
+            users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
+        }
         console.log(tokens);
         res.send(`Successful: ${JSON.stringify(req.query, null, 2)}`);
     }
 });
 
-// Set up a webhook listener for Webhook Event
+// Sets up webhook for Zoom Deauthorization
+app.post("/zoomdeauth", (req, res) => {
+    res.status(200).end();
+    console.log(req.body);
+})
+
+// Set up a webhook listener for Meeting Info
 app.post("/", (req, res) => {
     let webhook;
     let meeting;
