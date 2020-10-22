@@ -88,7 +88,7 @@ app.get("/", (req, res) => {
 
     // Step 2: 
     // If no authorization code is available, redirect to Zoom OAuth to authorize
-    res.redirect("https://zoom.us/oauth/authorize?response_type=code&client_id=" + process.env.clientID + "&redirect_uri=" + process.env.zoomRedirectURL);
+    res.redirect("https://zoom.us/oauth/authorize?response_type=code&client_id=" + process.env.zoomclientID + "&redirect_uri=" + process.env.zoomRedirectURL);
 });
 
 app.get("/oauth2callback", async (req, res) => {
@@ -96,7 +96,7 @@ app.get("/oauth2callback", async (req, res) => {
         let code = req.query.code;
         // This will provide an object with the access_token and refresh_token.
         // Save these somewhere safe so they can be used at a later time.
-        const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); });
+        const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); res.send("Illegal access.")});
         // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
         if (tokens.refresh_token){
             users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
@@ -108,8 +108,8 @@ app.get("/oauth2callback", async (req, res) => {
 
 // Sets up webhook for Zoom Deauthorization
 app.post("/zoomdeauth", (req, res) => {
-    res.status(200).end();
     console.log(req.body);
+    res.status(200).end();
 })
 
 // Set up a webhook listener for Meeting Info
