@@ -1,0 +1,58 @@
+[
+  {
+    "id": "75szwM-qQrOhkj_9j6F8rQ",
+    "meetings": [
+      {
+        "duration": 0,
+        "start_time": "2020-10-22T21:35:18Z",
+        "timezone": "",
+        "topic": "Aditya Prasad's Personal Meeting Room",
+        "id": "5468788635",
+        "type": 4,
+        "uuid": "g20G8Lk+RECqrC4p1v31aw==",
+        "host_id": "75szwM-qQrOhkj_9j6F8rQ",
+        "participants": [
+          {
+            "user_id": "16778240",
+            "user_name": "Aditya Prasad",
+            "id": "75szwM-qQrOhkj_9j6F8rQ",
+            "join_time": "2020-10-22T21:35:18Z",
+            "leave_time": "2020-10-22T21:35:23Z"
+          }
+        ],
+        "end_time": "2020-10-22T21:35:23Z"
+      },
+      {
+        "duration": 0,
+        "start_time": "2020-10-22T21:46:52Z",
+        "timezone": "",
+        "topic": "Aditya Prasad's Personal Meeting Room",
+        "id": "5468788635",
+        "type": 4,
+        "uuid": "0I1NR4XKSgiHkwxfnexcYA==",
+        "host_id": "75szwM-qQrOhkj_9j6F8rQ",
+        "participants": [
+          {
+            "user_id": "16778240",
+            "user_name": "Aditya Prasad",
+            "id": "75szwM-qQrOhkj_9j6F8rQ",
+            "join_time": "2020-10-22T21:46:52Z",
+            "leave_time": "2020-10-22T21:46:58Z"
+          }
+        ],
+        "end_time": "2020-10-22T21:46:58Z"
+      }
+    ],
+    "zoomCreds": {
+      "refresh_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiJiMWE1OGVmNS0yMDMwLTQzYzItYjAwOC01YzkxMmZjMDNlMTcifQ.eyJ2ZXIiOjcsImF1aWQiOiIxOWMyNTI0Y2YwNzM0ZWEyM2ZmMTEwMDI4MTg3M2E0NiIsImNvZGUiOiIzZnJKNTBhV0l3Xzc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJpc3MiOiJ6bTpjaWQ6NTU4b3J0OVVRWE85VUM2RW95aUh0ZyIsImdubyI6MCwidHlwZSI6MSwidGlkIjowLCJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiI3NXN6d00tcVFyT2hral85ajZGOHJRIiwibmJmIjoxNjAzNDAyNDkyLCJleHAiOjIwNzY0NDI0OTIsImlhdCI6MTYwMzQwMjQ5MiwiYWlkIjoiNlhKdWhLQ0hSam1SZzFvdEVuSEdndyIsImp0aSI6ImIzNmNiYmNjLWIyODQtNDljMS1hYTU4LWZmMGFiMTRkYmZmMiJ9.y5BYwYtmRXQj2HrRb63u1CRGJryw61DZAfhtQIkMdPUvfzNg4NtgX7uegDKFGeuQdItMz9buIEvtYW8JpZbzyQ",
+      "access_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiJiNzY1Y2VhZi05MmJmLTRlNjAtOWZhMS1lZTUwOWRjMzRlYmYifQ.eyJ2ZXIiOjcsImF1aWQiOiIxOWMyNTI0Y2YwNzM0ZWEyM2ZmMTEwMDI4MTg3M2E0NiIsImNvZGUiOiIzZnJKNTBhV0l3Xzc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJpc3MiOiJ6bTpjaWQ6NTU4b3J0OVVRWE85VUM2RW95aUh0ZyIsImdubyI6MCwidHlwZSI6MCwidGlkIjowLCJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiI3NXN6d00tcVFyT2hral85ajZGOHJRIiwibmJmIjoxNjAzNDAyNDkyLCJleHAiOjE2MDM0MDYwOTIsImlhdCI6MTYwMzQwMjQ5MiwiYWlkIjoiNlhKdWhLQ0hSam1SZzFvdEVuSEdndyIsImp0aSI6IjFlZTQ3OTc4LWQzZjItNDFmYy04Y2NlLWNlM2RlYjA3OGI0NCJ9.bZ-ZJ9mYOR9wn17Y9SoiSmg77m9Tl9c32QZ9YvqM1LSAEWtADo_XZ27Tl5JhsYVgEelYiLo08TVHRDEJRU-UOQ"
+    },
+    "googleCreds": {
+      "access_token": "ya29.a0AfH6SMDws1stvzSAkkPt5PgKe2-t9Lllz03qEloRaTx5cwRvbF6PkcpLI35HpGnGMpwXuOr_FoStKucSiY_1zRkdz06vswMUBrX0HDAVWTGLbPHYl_Pjmve2lPCdca0WiSlDTqHIKQTFft38eloZUVfnQ3Xk4xxxDzE",
+      "refresh_token": "1//0d-DjvNlgeIueCgYIARAAGA0SNwF-L9IrRwq7FhV745zrNr5tcSfZ2GwkTi398usgIwxD6z4L5P9Zc39n3lXjpWQdguUCkXt1Pb0",
+      "scope": "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets",
+      "token_type": "Bearer",
+      "expiry_date": 1603406108180
+    }
+  }
+]
