@@ -92,27 +92,27 @@ app.get("/", (req, res) => {
 app.get("/oauth2callback", async (req, res) => {
     if (req.query.code){
         let code = req.query.code;
-        console.log(req.query);
         // This will provide an object with the access_token and refresh_token.
         // Save these somewhere safe so they can be used at a later time.
         const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); });
         // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
         users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
         console.log(tokens);
-        res.send("Successful");
+        res.send(`Successful: ${JSON.stringify(req.query, null, 2)}`);
     }
 });
 
 // Set up a webhook listener for Webhook Event
 app.post("/", (req, res) => {
-    res.status(200).end();
     let webhook;
     let meeting;
     try {
         webhook = req.body;
     } catch (err) {
         console.log(`Webhook Error: ${err.message}`);
+        res.send("Failed.")
     }
+    res.status(200).end();
     // Check to see if you received the event or not.
     if (req.headers.authorization === process.env.zoomVerificationToken) {
         switch (webhook.event) {
@@ -128,15 +128,20 @@ app.post("/", (req, res) => {
                 break;
             case "meeting.ended":
                 console.log(`${webhook.payload.object.topic} ended at time ${webhook.payload.object.end_time}`);
-                for (let meeting of meetings) {
-                    if (meeting.uuid === webhook.payload.object.uuid) {
-                        meeting.end_time = webhook.payload.object.end_time;
+                meeting = webhook.payload.object;
+                for (let user of users){
+                    if (user.id === meeting.host_id){
+                        for (let meeting of user.meetings) {
+                            if (meeting.uuid === webhook.payload.object.uuid) {
+                                meeting.end_time = webhook.payload.object.end_time;
+                            }
+                        }
                     }
                 }
                 // This is the part where we have to create a spreadsheet and place it in user"s drive.
-                fs.writeFile("current-meetings.json", JSON.stringify(meetings, null, 2), (err) => {
+                fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
                     if (err) throw err;
-                    console.log("Meetings Updated!");
+                    console.log("Updated!");
                 });
                 break;
             case "meeting.participant_joined":
@@ -153,11 +158,15 @@ app.post("/", (req, res) => {
                 break;
             case "meeting.participant_left":
                 console.log(`${webhook.payload.object.participant.user_name} left ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.leave_time}`);
-                for (let meeting of meetings) {
-                    if (meeting.uuid === webhook.payload.object.uuid) {
-                        for (let participant of meeting.participants) {
-                            if (participant.user_id === webhook.payload.object.participant.user_id) {
-                                participant.leave_time = webhook.payload.object.participant.leave_time;
+                for (let user of users) {
+                    if (user.id === webhook.payload.object.host_id) {
+                        for (let meeting of user.meetings) {
+                            if (meeting.uuid === webhook.payload.object.uuid) {
+                                for (let participant of meeting.participants) {
+                                    if (participant.user_id === webhook.payload.object.participant.user_id) {
+                                        participant.leave_time = webhook.payload.object.participant.leave_time;
+                                    }
+                                }
                             }
                         }
                     }
