@@ -1,22 +1,20 @@
 [
   {
     "duration": 0,
-    "start_time": "2020-10-20T01:58:43Z",
+    "start_time": "2020-10-23T04:48:21Z",
     "timezone": "",
     "topic": "Krish Thawani's Zoom Meeting",
-    "id": "75821349518",
+    "id": "75896035460",
     "type": 1,
-    "uuid": "mcOfPClGRfW83OjkNTMNzQ==",
+    "uuid": "Vvw8gqxgRwauTX0mhJouxw==",
     "host_id": "D30SoZWLT-ySJM5UEXcJTA",
     "participants": [
       {
         "user_id": "16778240",
         "user_name": "Krish Thawani",
         "id": "D30SoZWLT-ySJM5UEXcJTA",
-        "join_time": "2020-10-20T01:58:43Z",
-        "leave_time": "2020-10-20T02:24:38Z"
+        "join_time": "2020-10-23T04:48:21Z"
       }
-    ],
-    "end_time": "2020-10-20T02:24:38Z"
+    ]
   }
 ]
