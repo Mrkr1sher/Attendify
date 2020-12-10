@@ -52,7 +52,7 @@ app.get("/", (req, res) => { //authorizing them
                     try {
                         if (request.url.indexOf('/oauth2callback') > -1) {
                             // acquire the code from the querystring, and close the web server.
-                            const qs = new URL(request.url, 'http://localhost:3000')
+                            const qs = new URL(request.url, 'http://localhost:2000')
                                 .searchParams;
                             let code = qs.get('code');
                             console.log(`Code is ${code}`);
@@ -115,12 +115,14 @@ app.get("/", (req, res) => { //authorizing them
                         try {
                             if (await isAuthenticated(user.id)){
                                 console.log("Auth completed. You have been verified with Google.");
+                                res.end();
                             }
                         }
                         catch (error){
                             console.log(error);
                             delete users[users.indexOf(user)];
                             console.log("Auth failed. Google did not authenticate properly or in time.");
+                            res.end();
                         }
                     }
                 }).auth(null, null, true, body.access_token);
@@ -139,20 +141,20 @@ app.get("/", (req, res) => { //authorizing them
     res.redirect("https://zoom.us/oauth/authorize?response_type=code&client_id=" + process.env.zoomclientID + "&redirect_uri=" + process.env.zoomRedirectURL);
 });
 
-app.get("/oauth2callback", async (req, res) => {
-    if (req.query.code){
-        let code = req.query.code;
-        // This will provide an object with the access_token and refresh_token.
-        // Save these somewhere safe so they can be used at a later time.
-        const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); res.send("Illegal access.")});
-        // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
-        if (tokens.refresh_token){
-            users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
-        }
-        console.log(tokens);
-        res.send(`Successful: ${JSON.stringify(req.query, null, 2)}`);
-    }
-});
+// app.get("/oauth2callback", async (req, res) => {
+//     if (req.query.code){
+//         let code = req.query.code;
+//         // This will provide an object with the access_token and refresh_token.
+//         // Save these somewhere safe so they can be used at a later time.
+//         const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); res.send("Illegal access.")});
+//         // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
+//         if (tokens.refresh_token){
+//             users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
+//         }
+//         console.log(tokens);
+//         res.send(`Successful: ${JSON.stringify(req.query, null, 2)}`);
+//     }
+// });
 
 // Sets up webhook for Zoom Deauthorization
 app.post("/zoomdeauth", (req, res) => {
