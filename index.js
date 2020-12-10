@@ -26,7 +26,7 @@ let users = [];
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
+app.get("/", (req, res) => { //authorizing them
 
     // Step 1: 
     // Check if the code parameter is in the url 
@@ -65,7 +65,7 @@ app.get("/", (req, res) => {
                             if (r.tokens.refresh_token){
                                 users[users.map(user => user.id).indexOf(zoom_id)].googleCreds = r.tokens;
                                 console.log(r.tokens);
-                                response.send(`Successful: ${JSON.stringify(req.query, null, 2)}`);
+                                console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
                                 console.info('Tokens acquired.');
                                 resolve(true);
                             }
@@ -83,7 +83,7 @@ app.get("/", (req, res) => {
             });
         }
 
-        request.post(url, (error, response, body) => {
+        request.post(url, (error, response, body) => { //sent the query code to Zoom to get access tokens
             body = JSON.parse(body);
 
             let tokenData = body;
@@ -111,10 +111,10 @@ app.get("/", (req, res) => {
                                 access_token: tokenData.access_token
                             }
                         };
-                        users.push(user)
+                        users.push(user);
                         try {
                             if (await isAuthenticated(user.id)){
-                                console.log("Auth completed. You have been verified with Google.")
+                                console.log("Auth completed. You have been verified with Google.");
                             }
                         }
                         catch (error){
@@ -237,7 +237,6 @@ app.post("/", (req, res) => {
                     map(m => m.uuid).indexOf(object.uuid)].participants[users[user_index].meetings[users[user_index].meetings.
                     map(m => m.uuid).indexOf(object.uuid)].participants.
                     map(p => p.user_id).indexOf(object.participant.user_id)].leave_time = object.participant.leave_time;
-                ;
                 // for (let user of users) {
                 //     if (user.id === webhook.payload.object.host_id) {
                 //         for (let meeting of user.meetings) {
