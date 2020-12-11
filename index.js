@@ -165,12 +165,19 @@ app.post("/", (req, res) => {
     if (req.headers.authorization === process.env.zoomVerificationToken) {
         let meeting = webhook.payload.object;
         let person;
-        let i = users.map(u => u.id).indexOf(meeting.host_id);
-        let meetIndex = users[i].meetings.map(m => m.uuid).indexOf(meeting.uuid);
+        let i;
+        let meetIndex;
+        let participants;
+        let idx;
+
         switch (webhook.event) {
             case "meeting.started":
                 console.log(`${meeting.topic} started at time ${meeting.start_time}`);
-                meeting.participants = []
+
+                i = users.map(u => u.id).indexOf(meeting.host_id);
+                meeting.participants = [];
+
+                // Add this meeting to the list of meetings under the user's data
                 users[i].meetings.push(meeting);
                 break;
 
@@ -178,34 +185,68 @@ app.post("/", (req, res) => {
                 let end = meeting.end_time;
                 let start = meeting.start_time;
                 console.log(`${meeting.topic} ended at time ${end}`);
+
+                i = users.map(u => u.id).indexOf(meeting.host_id);
+                meetIndex = users[i].meetings.map(m => m.uuid).indexOf(meeting.uuid);
+                participants = users[i].meetings[meetIndex].participants;
+
+                // Find the meeting's end time through the user's data
                 users[i].meetings[meetIndex].end_time = meeting.end_time;
 
                 let date = start.slice(0, start.indexOf("T")).split("-");
                 let stime = start.slice(start.indexOf("T") + 1).split(":");
                 let etime = end.slice(end.indexOf("T") + 1).split(":");
-                console.log("TIME" + stime);
+
+                calculatePercent(participants, start, end);
+
                 // This is the part where we have to create a spreadsheet and place it in user's drive.
                 createSheet(oauth2Client,
                     `${meeting.topic} ${date[1]}/${date[2]}/${date[0]} ${stime[0]}:${stime[1]} - ${etime[0]}:${etime[1]}`,
-                    i, users[i].meetings[meetIndex].participants).then(r => {
-                    fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
-                        if (err) throw err;
-                        console.log("Updated!");
+                    i, participants).then(r => {
+                        fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
+                            if (err) throw err;
+                            console.log("Updated!");
+                        });
                     });
-                });
                 break;
 
             case "meeting.participant_joined":
                 person = meeting.participant;
                 console.log(`${person.user_name} joined ${meeting.topic} at time ${person.join_time}`);
-                users[i].meetings[meetIndex].participants.push(person);
+
+                i = users.map(u => u.id).indexOf(meeting.host_id);
+                meetIndex = users[i].meetings.map(m => m.uuid).indexOf(meeting.uuid);
+                participants = users[i].meetings[meetIndex].participants;
+                idx = participants.map(p => p.id).indexOf(person.id);
+
+                // If the participant's User ID is already found in the list of participants (i.e. the index >= 0)
+                // Then just access their data and add on their join time
+                if (idx >= 0) {
+                    participants[idx].join_times.push(meeting.participant.join_time);
+                }
+                // Else, if they aren't already in the list, it means they are a new participant, so add them to the data
+                // Also remove the attribute of "join_time" and basically replace it with a list of "join_times"
+                else {
+                    person.join_times = [person.join_time];
+                    delete person.join_time;
+                    participants.push(person);
+                }
                 break;
 
             case "meeting.participant_left":
                 person = meeting.participant;
                 console.log(`${person.user_name} left ${meeting.topic} at time ${person.leave_time}`);
-                users[i].meetings[meetIndex].participants[users[i].meetings[meetIndex].participants.
-                map(p => p.user_id).indexOf(meeting.participant.user_id)].leave_time = meeting.participant.leave_time;
+
+                i = users.map(u => u.id).indexOf(meeting.host_id);
+                meetIndex = users[i].meetings.map(m => m.uuid).indexOf(meeting.uuid);
+                participants = users[i].meetings[meetIndex].participants;
+                idx = participants.map(p => p.id).indexOf(person.id);
+
+                // If the list of leave times for that participant does no exist, create it
+                if (!participants[idx].leave_times)
+                    participants[idx].leave_times = [];
+                // Add on the current leave time to the person's list of leave times
+                participants[idx].leave_times.push(person.leave_time);
                 break;
         }
     }
@@ -235,8 +276,19 @@ app.post("/", (req, res) => {
                 ]
             }
         });
-        let relevantData = participants.map(participant => {
-           return [participant.user_name, "69%", participant.join_time, participant.leave_time];
+        let relevantData = participants.map(p => {
+            let join_times_sheet = [];
+            let leave_times_sheet = [];
+            for (let i = 0; i < p.join_times.length; i++) {
+                let times = p.join_times[i].slice(p.join_times[i].indexOf("T") + 1, p.join_times[i].indexOf("Z")).split(":");
+                console.log(times);
+                join_times_sheet[i] += (+times[0] + 5) + ":" + times[1] + ":" + times[2] + ", ";
+                
+                times = p.leave_times[i].slice(p.leave_times[i].indexOf("T") + 1, p.leave_times[i].indexOf("Z")).split(":");
+                console.log(times);
+                leave_times_sheet[i] += (+times[0] + 5) + ":" + times[1] + ":" + times[2] + ", ";
+            }
+            return [p.user_name, +(parseFloat(p.percent_attended).toFixed(2)), join_times_sheet, leave_times_sheet];
         });
         relevantData.unshift(['Username', '% Attended', 'Join Times', 'Leave Times'])
         console.log("Y");
@@ -253,6 +305,29 @@ app.post("/", (req, res) => {
         console.info(res);
         console.log(`Created spreadsheet at link: ${createResponse.data.spreadsheetUrl}`)
         return res.data;
+    }
+
+    // Function to calculate the percentage of the meeting that the participant attended
+    function calculatePercent(participants, stime, etime) {
+        // Iterate over every participant in the data
+        for (let p of participants) {
+            let attended = 0; // To keep track of total time spent in meeting
+            let joins = p.join_times;
+            let leaves = p.leave_times;
+            console.log(p);
+            // Go through every join/leave time (there should be an equal amount)
+            for (let i = 0; i < joins.length; i++) {
+                // If for some reason the final leave time is not recorded for a participant,
+                // set their final leave time to just be the meeting's end time.
+                if (leaves == null || leaves[i] == null) leaves[i] = etime;
+                // Convert the Strings to Dates so that they can be subtracted and the time can be added
+                attended += new Date(leaves[i]) - new Date(joins[i]);
+            }
+            console.log(attended);
+            // Set the value of the percent 
+            p.percent_attended = attended * 100 / (new Date(etime) - new Date(stime));
+            console.log(p);
+        }
     }
 
 });
