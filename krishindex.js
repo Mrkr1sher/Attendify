@@ -131,7 +131,7 @@ app.post("/", (req, res) => {
         // create the spreadsheet
         const createResponse = await sheets.spreadsheets.create({
             resource: {
-                properties: { 
+                properties: {
                     title: `Attendance ${msg}` // title of spreadsheet
                 },
                 sheets: [ // the sheets (individual tabs), we'll prob only have one
@@ -175,3 +175,14 @@ app.post("/", (req, res) => {
 
 
 app.listen(4000, () => console.log(`Zoom app listening at PORT: 4000`))
+
+
+                // for (let user of users){ // run through users
+                //     if (user.id === webhook.payload.object.host_id){ // when a user is the host of the meeting
+                //         for (let meeting of user.meetings) { // run through meetings
+                //             if (meeting.uuid === webhook.payload.object.uuid) { // when a meeting is the one the participant joined
+                //                 meeting.participants.push(webhook.payload.object.participant); // add the participant to meeting object
+                //             }
+                //         }
+                //     }
+                // }

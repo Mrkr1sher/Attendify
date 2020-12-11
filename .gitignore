@@ -3,3 +3,5 @@ node_modules/
 ngrok
 zoom-oauth-sample-app/
 ngrok.exe
+.env
+oauth2.keys.json

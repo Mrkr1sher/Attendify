@@ -40,45 +40,45 @@ app.get("/", (req, res) => { //authorizing them
 
         function isAuthenticated(zoom_id) {
             return new Promise((resolve, reject) => {
-            const authUrl = oauth2Client.generateAuthUrl({
-                // "online" (default) or "offline" (gets refresh_token)
-                access_type: "offline",
-                // response_type: "code",
-                scope: scopes,
-            });
-            // res.redirect(authUrl)
-            const server = http
-                .createServer(async (request, response) => {
-                    try {
-                        if (request.url.indexOf('/oauth2callback') > -1) {
-                            // acquire the code from the querystring, and close the web server.
-                            const qs = new URL(request.url, 'http://localhost:3000')
-                                .searchParams;
-                            let code = qs.get('code');
-                            console.log(`Code is ${code}`);
-                            response.end('Authentication successful! Please return to the console.');
-                            server.destroy();
-
-                            // Now that we have the code, use that to acquire tokens.
-                            const r = await oauth2Client.getToken(code);
-                            // Make sure to set the credentials on the OAuth2 client.
-                            if (r.tokens.refresh_token){
-                                users[users.map(user => user.id).indexOf(zoom_id)].googleCreds = r.tokens;
-                                console.log(r.tokens);
-                                console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
-                                console.info('Tokens acquired.');
-                                resolve(true);
-                            }
-                            resolve(false);
-                        }
-                    } catch (e) {
-                        reject(e);
-                    }
-                })
-            .listen(3000, () => {
-                    // open the browser to the authorize url to start the workflow
-                    open(authUrl, {wait: false}).then(cp => cp.unref());
+                const authUrl = oauth2Client.generateAuthUrl({
+                    // "online" (default) or "offline" (gets refresh_token)
+                    access_type: "offline",
+                    // response_type: "code",
+                    scope: scopes,
                 });
+                // res.redirect(authUrl)
+                const server = http
+                    .createServer(async (request, response) => {
+                        try {
+                            if (request.url.indexOf('/oauth2callback') > -1) {
+                                // acquire the code from the querystring, and close the web server.
+                                const qs = new URL(request.url, 'http://localhost:3000')
+                                    .searchParams;
+                                let code = qs.get('code');
+                                console.log(`Code is ${code}`);
+                                response.end('Authentication successful! Please return to the console.');
+                                server.destroy();
+
+                                // Now that we have the code, use that to acquire tokens.
+                                const r = await oauth2Client.getToken(code);
+                                // Make sure to set the credentials on the OAuth2 client.
+                                if (r.tokens.refresh_token) {
+                                    users[users.map(user => user.id).indexOf(zoom_id)].googleCreds = r.tokens;
+                                    console.log(r.tokens);
+                                    console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
+                                    console.info('Tokens acquired.');
+                                    resolve(true);
+                                }
+                                resolve(false);
+                            }
+                        } catch (e) {
+                            reject(e);
+                        }
+                    })
+                    .listen(3000, () => {
+                        // open the browser to the authorize url to start the workflow
+                        open(authUrl, { wait: false }).then(cp => cp.unref());
+                    });
                 destroyer(server);
             });
         }
@@ -113,20 +113,23 @@ app.get("/", (req, res) => { //authorizing them
                         };
                         users.push(user);
                         try {
-                            if (await isAuthenticated(user.id)){
+                            if (await isAuthenticated(user.id)) {
                                 console.log("Auth completed. You have been verified with Google.");
+                                res.end();
                             }
                         }
-                        catch (error){
+                        catch (error) {
                             console.log(error);
                             delete users[users.indexOf(user)];
                             console.log("Auth failed. Google did not authenticate properly or in time.");
+                            res.end();
                         }
                     }
                 }).auth(null, null, true, body.access_token);
 
             } else {
                 // Handle errors, something"s gone wrong!
+                res.end("No access token provided.");
             }
 
         }).auth(process.env.zoomClientID, process.env.zoomClientSecret);
@@ -139,20 +142,20 @@ app.get("/", (req, res) => { //authorizing them
     res.redirect("https://zoom.us/oauth/authorize?response_type=code&client_id=" + process.env.zoomclientID + "&redirect_uri=" + process.env.zoomRedirectURL);
 });
 
-app.get("/oauth2callback", async (req, res) => {
-    if (req.query.code){
-        let code = req.query.code;
-        // This will provide an object with the access_token and refresh_token.
-        // Save these somewhere safe so they can be used at a later time.
-        const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); res.send("Illegal access.")});
-        // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
-        if (tokens.refresh_token){
-            users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
-        }
-        console.log(tokens);
-        res.send(`Successful: ${JSON.stringify(req.query, null, 2)}`);
-    }
-});
+// app.get("/oauth2callback", async (req, res) => {
+//     if (req.query.code){
+//         let code = req.query.code;
+//         // This will provide an object with the access_token and refresh_token.
+//         // Save these somewhere safe so they can be used at a later time.
+//         const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); res.send("Illegal access.")});
+//         // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
+//         if (tokens.refresh_token){
+//             users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
+//         }
+//         console.log(tokens);
+//         res.send(`Successful: ${JSON.stringify(req.query, null, 2)}`);
+//     }
+// });
 
 // Sets up webhook for Zoom Deauthorization
 app.post("/zoomdeauth", (req, res) => {
@@ -163,9 +166,6 @@ app.post("/zoomdeauth", (req, res) => {
 // Set up a webhook listener for Meeting Info
 app.post("/", (req, res) => {
     let webhook;
-    let meeting;
-    let user_index;
-    let object;
     try {
         webhook = req.body;
     } catch (err) {
@@ -175,81 +175,43 @@ app.post("/", (req, res) => {
     res.status(200).end();
     // Check to see if you received the event or not.
     if (req.headers.authorization === process.env.zoomVerificationToken) {
+        let meeting = webhook.payload.object;
+        let i = users.map(u => u.id).indexOf(meeting.host_id);
+        let meetIndex = users[i].meetings.map(m => m.uuid).indexOf(meeting.uuid);
         switch (webhook.event) {
             case "meeting.started":
-                console.log(`${webhook.payload.object.topic} started at time ${webhook.payload.object.start_time}`);
-                meeting = webhook.payload.object;
+                console.log(`${meeting.topic} started at time ${meeting.start_time}`);
                 meeting.participants = []
-                user_index = users.
-                    map(u => u.id).indexOf(meeting.host_id);
-                users[user_index].meetings.push(meeting);
-                // for (let user of users){
-                //     if (user.id === meeting.host_id){
-                //         user.meetings.push(meeting);
-                //     }
-                // }
+                users[i].meetings.push(meeting);
                 break;
+
             case "meeting.ended":
-                console.log(`${webhook.payload.object.topic} ended at time ${webhook.payload.object.end_time}`);
-                meeting = webhook.payload.object;
-                user_index = users.
-                    map(u => u.id).indexOf(meeting.host_id);
-                users[user_index].meetings[users[user_index].meetings.
-                    map(m => m.uuid).indexOf(meeting.uuid)].end_time = meeting.end_time;
-                // for (let user of users){
-                //     if (user.id === meeting.host_id){
-                //         for (let meeting of user.meetings) {
-                //             if (meeting.uuid === webhook.payload.object.uuid) {
-                //                 meeting.end_time = webhook.payload.object.end_time;
-                //             }
-                //         }
-                //     }
-                //
-                // }
-                // This is the part where we have to create a spreadsheet and place it in user"s drive.
+                let end = meeting.end_time;
+                let start = meeting.start_time;
+                console.log(`${meeting.topic} ended at time ${end}`);
+                users[i].meetings[meetIndex].end_time = meeting.end_time;
+
+                // This is the part where we have to create a spreadsheet and place it in user's drive.
                 fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
                     if (err) throw err;
                     console.log("Updated!");
                 });
+
+                let date = start.slice(0, start.indexOf("T")).split("-");
+                createSheet(oauth2Client, `${meeting.topic} ${date[1]}/${date[2]}/${date[0]}`);
                 break;
+
             case "meeting.participant_joined":
-                console.log(`${webhook.payload.object.participant.user_name} joined ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.join_time}`);
-                object = webhook.payload.object;
-                user_index = users.
-                    map(u => u.id).indexOf(object.host_id);
-                users[user_index].meetings[users[user_index].meetings.
-                    map(m => m.uuid).indexOf(object.uuid)].participants.push(object.participant);
-                // for (let user of users){ // run through users
-                //     if (user.id === webhook.payload.object.host_id){ // when a user is the host of the meeting
-                //         for (let meeting of user.meetings) { // run through meetings
-                //             if (meeting.uuid === webhook.payload.object.uuid) { // when a meeting is the one the participant joined
-                //                 meeting.participants.push(webhook.payload.object.participant); // add the participant to meeting object
-                //             }
-                //         }
-                //     }
-                // }
+                let person = meeting.participant;
+                console.log(`${person.user_name} joined ${meeting.topic} at time ${person.join_time}`);
+                users[i].meetings[meetIndex].participants.push(person);
                 break;
+
             case "meeting.participant_left":
-                console.log(`${webhook.payload.object.participant.user_name} left ${webhook.payload.object.topic} at time ${webhook.payload.object.participant.leave_time}`);
-                object = webhook.payload.object;
-                user_index = users.map(u => u.id).indexOf(object.host_id);
-                users[user_index].meetings[users[user_index].meetings.
-                    map(m => m.uuid).indexOf(object.uuid)].participants[users[user_index].meetings[users[user_index].meetings.
-                    map(m => m.uuid).indexOf(object.uuid)].participants.
-                    map(p => p.user_id).indexOf(object.participant.user_id)].leave_time = object.participant.leave_time;
-                // for (let user of users) {
-                //     if (user.id === webhook.payload.object.host_id) {
-                //         for (let meeting of user.meetings) {
-                //             if (meeting.uuid === webhook.payload.object.uuid) {
-                //                 for (let participant of meeting.participants) {
-                //                     if (participant.user_id === webhook.payload.object.participant.user_id) {
-                //                         participant.leave_time = webhook.payload.object.participant.leave_time;
-                //                     }
-                //                 }
-                //             }
-                //         }
-                //     }
-                // }
+                let person = meeting.participant;
+                console.log(`${person.user_name} left ${meeting.topic} at time ${person.leave_time}`);
+                users[i].meetings[meetIndex].participants[users[i].meetings[meetIndex].participants.
+                    map(p => p.user_id).indexOf(meeting.participant.user_id)].leave_time = meeting.participant.leave_time;
                 break;
         }
     }
