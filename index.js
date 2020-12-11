@@ -41,7 +41,7 @@ app.get("/", (req, res) => { //authorizing them
 
         let url = "https://zoom.us/oauth/token?grant_type=authorization_code&code=" + req.query.code + "&redirect_uri=" + process.env.zoomRedirectURL;
 
-        function isAuthenticated(zoom_id) {
+        function isAuthenticated(user) {
             return new Promise((resolve, reject) => {
                 const authUrl = oauth2Client.generateAuthUrl({
                     // "online" (default) or "offline" (gets refresh_token)
@@ -66,10 +66,11 @@ app.get("/", (req, res) => { //authorizing them
                                 const r = await oauth2Client.getToken(code);
                                 // Make sure to set the credentials on the OAuth2 client.
                                 if (r.tokens.refresh_token) {
-                                    users[users.map(user => user.id).indexOf(zoom_id)].googleCreds = r.tokens;
+                                    user.googleCreds = r.tokens;
                                     console.log(r.tokens);
                                     console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
                                     console.info('Tokens acquired.');
+                                    users.push(user);
                                     resolve(true);
                                 }
                                 resolve(false);
@@ -114,9 +115,8 @@ app.get("/", (req, res) => { //authorizing them
                                 access_token: tokenData.access_token
                             }
                         };
-                        users.push(user);
                         try {
-                            if (await isAuthenticated(user.id)) {
+                            if (await isAuthenticated(user)) {
                                 console.log("Auth completed. You have been verified with Google.");
                                 res.end();
                             }
