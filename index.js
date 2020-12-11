@@ -129,6 +129,7 @@ app.get("/", (req, res) => { //authorizing them
 
             } else {
                 // Handle errors, something"s gone wrong!
+                res.end("No access token provided.");
             }
 
         }).auth(process.env.zoomClientID, process.env.zoomClientSecret);
@@ -198,6 +199,12 @@ app.post("/", (req, res) => {
                     map(u => u.id).indexOf(meeting.host_id);
                 users[user_index].meetings[users[user_index].meetings.
                     map(m => m.uuid).indexOf(meeting.uuid)].end_time = meeting.end_time;
+                let e = meeting.end_time
+                let s = users[user_index].meetings[users[user_index].meetings.map(m => m.uuid).indexOf(meeting.uuid)].start_time;
+                let startDate = s.slice(0, s.indexOf("T")).split("-");
+                let st = s.slice(s.indexOf("T"), s.indexOf("Z")).split();
+                console.log(`${hook.topic} ${startDate[1]}/${startDate[2]}/${startDate[0]} at `);
+                //createSheet(oauth2Client, `${hook.topic} ${startDate[1]}/${startDate[2]}/${startDate[0]} at `);
                 // for (let user of users){
                 //     if (user.id === meeting.host_id){
                 //         for (let meeting of user.meetings) {
@@ -211,7 +218,7 @@ app.post("/", (req, res) => {
                 // This is the part where we have to create a spreadsheet and place it in user"s drive.
                 fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
                     if (err) throw err;
-                    console.log("Updated!");
+                    console.log("Updated file current-users.json!");
                 });
                 break;
             case "meeting.participant_joined":

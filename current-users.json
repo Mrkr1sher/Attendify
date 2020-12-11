@@ -22,6 +22,18 @@
           }
         ],
         "end_time": "2020-12-10T23:12:47Z"
+      },
+      {
+        "duration": 0,
+        "start_time": "2020-12-10T23:34:42Z",
+        "timezone": "",
+        "topic": "Aditya Prasad's Personal Meeting Room",
+        "id": "5468788635",
+        "type": 4,
+        "uuid": "oIlOJhQPQlKg1AwV1WncPg==",
+        "host_id": "75szwM-qQrOhkj_9j6F8rQ",
+        "participants": [],
+        "end_time": "2020-12-10T23:34:44Z"
       }
     ],
     "zoomCreds": {
