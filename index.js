@@ -247,7 +247,7 @@ app.post("/", (req, res) => {
             range: `A1:D${relevantData.length}`,
             valueInputOption: 'USER_ENTERED',
             requestBody: {
-                relevantData
+                values: relevantData
             },
         });
         console.info(res);
