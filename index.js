@@ -10,8 +10,10 @@ const url = require('url');
 const open = require('open');
 const destroyer = require('server-destroy');
 
+
 //google api
 const { google } = require("googleapis");
+const sheets = google.sheets('v4');
 const oauth2Client = new google.auth.OAuth2(
     process.env.googleClientID,
     process.env.googleClientSecret,
@@ -19,7 +21,8 @@ const oauth2Client = new google.auth.OAuth2(
 );
 const scopes = [
     "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive.file"
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/documents"
 ];
 
 let users = [];
@@ -142,21 +145,6 @@ app.get("/", (req, res) => { //authorizing them
     res.redirect("https://zoom.us/oauth/authorize?response_type=code&client_id=" + process.env.zoomclientID + "&redirect_uri=" + process.env.zoomRedirectURL);
 });
 
-// app.get("/oauth2callback", async (req, res) => {
-//     if (req.query.code){
-//         let code = req.query.code;
-//         // This will provide an object with the access_token and refresh_token.
-//         // Save these somewhere safe so they can be used at a later time.
-//         const { tokens } = await oauth2Client.getToken(code).catch((e) => { console.error(e); res.send("Illegal access.")});
-//         // TO BE USED WHEN MEETING ENDS oauth2Client.setCredentials(tokens);
-//         if (tokens.refresh_token){
-//             users[users.length - 1].googleCreds = tokens; //TEMPORARY SOLUTION
-//         }
-//         console.log(tokens);
-//         res.send(`Successful: ${JSON.stringify(req.query, null, 2)}`);
-//     }
-// });
-
 // Sets up webhook for Zoom Deauthorization
 app.post("/zoomdeauth", (req, res) => {
     console.log(req.body);
@@ -176,6 +164,7 @@ app.post("/", (req, res) => {
     // Check to see if you received the event or not.
     if (req.headers.authorization === process.env.zoomVerificationToken) {
         let meeting = webhook.payload.object;
+        let person;
         let i = users.map(u => u.id).indexOf(meeting.host_id);
         let meetIndex = users[i].meetings.map(m => m.uuid).indexOf(meeting.uuid);
         switch (webhook.event) {
@@ -198,22 +187,71 @@ app.post("/", (req, res) => {
                 });
 
                 let date = start.slice(0, start.indexOf("T")).split("-");
-                createSheet(oauth2Client, `${meeting.topic} ${date[1]}/${date[2]}/${date[0]}`);
+                
+                createSheet(oauth2Client, `${meeting.topic} ${date[1]}/${date[2]}/${date[0]}`, i);
                 break;
 
             case "meeting.participant_joined":
-                let person = meeting.participant;
+                person = meeting.participant;
                 console.log(`${person.user_name} joined ${meeting.topic} at time ${person.join_time}`);
                 users[i].meetings[meetIndex].participants.push(person);
                 break;
 
             case "meeting.participant_left":
-                let person = meeting.participant;
+                person = meeting.participant;
                 console.log(`${person.user_name} left ${meeting.topic} at time ${person.leave_time}`);
                 users[i].meetings[meetIndex].participants[users[i].meetings[meetIndex].participants.
                     map(p => p.user_id).indexOf(meeting.participant.user_id)].leave_time = meeting.participant.leave_time;
                 break;
         }
+    }
+    // function to create spreadsheet
+    async function createSheet(auth, msg, i) {
+        oauth2Client.setCredentials({
+            refresh_token: users[i].googleCreds.refresh_token
+          });
+        google.options({ auth });
+        // create the spreadsheet
+        const createResponse = await sheets.spreadsheets.create({
+            resource: {
+                properties: {
+                    title: `Attendance ${msg}` // title of spreadsheet
+                },
+                sheets: [ // the sheets (individual tabs), we'll prob only have one
+                    {
+                        properties: {
+                            title: 'Attendance',
+                            gridProperties: {
+                                rowCount: 50,
+                                columnCount: 5
+                            }
+                        }
+                    }
+                ]
+            }
+        });
+
+        // still in progress
+        const res = await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: createResponse.data.spreadsheetId,
+            resource: {
+                requests: [
+                    {
+                        insertDimension: {
+                            range: {
+                                sheetId: createResponse.data.sheets[0].properties.sheetId,
+                                dimension: 'COLUMNS',
+                                startIndex: 2,
+                                endIndex: 4,
+                            },
+                            inheritFromBefore: false,
+                        },
+                    },
+                ],
+            },
+        });
+        console.info(res);
+        return res.data;
     }
 
 });
