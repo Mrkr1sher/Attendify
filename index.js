@@ -180,15 +180,20 @@ app.post("/", (req, res) => {
                 console.log(`${meeting.topic} ended at time ${end}`);
                 users[i].meetings[meetIndex].end_time = meeting.end_time;
 
+                let date = start.slice(0, start.indexOf("T")).split("-");
+                let stime = start.slice(start.indexOf("T") + 1).split(":");
+                let etime = end.slice(end.indexOf("T") + 1).split(":");
+                console.log("TIME" + stime);
+
+                createSheet(oauth2Client, `${meeting.topic} ${date[1]}/${date[2]}/${date[0]} ${stime[0]}:${stime[1]} - ${etime[0]}:${etime[1]}`, i);
+
                 // This is the part where we have to create a spreadsheet and place it in user's drive.
                 fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
                     if (err) throw err;
                     console.log("Updated!");
                 });
 
-                let date = start.slice(0, start.indexOf("T")).split("-");
-                
-                createSheet(oauth2Client, `${meeting.topic} ${date[1]}/${date[2]}/${date[0]}`, i);
+
                 break;
 
             case "meeting.participant_joined":
@@ -209,9 +214,10 @@ app.post("/", (req, res) => {
     async function createSheet(auth, msg, i) {
         oauth2Client.setCredentials({
             refresh_token: users[i].googleCreds.refresh_token
-          });
+        });
         google.options({ auth });
         // create the spreadsheet
+        console.log("Create");
         const createResponse = await sheets.spreadsheets.create({
             resource: {
                 properties: {
@@ -222,7 +228,7 @@ app.post("/", (req, res) => {
                         properties: {
                             title: 'Attendance',
                             gridProperties: {
-                                rowCount: 50,
+                                rowCount: 20,
                                 columnCount: 5
                             }
                         }
@@ -230,24 +236,17 @@ app.post("/", (req, res) => {
                 ]
             }
         });
-
-        // still in progress
-        const res = await sheets.spreadsheets.batchUpdate({
+        let values = [['Justin', '1/1/2001', 'Website'],
+            ['Node.js', '2018-03-14', 'Fun']];
+        console.log("Y");
+        console.log(createResponse);
+        console.log("Sheets: " + createResponse.config.data.sheets[0].properties);
+        const res = await sheets.spreadsheets.values.append({
             spreadsheetId: createResponse.data.spreadsheetId,
-            resource: {
-                requests: [
-                    {
-                        insertDimension: {
-                            range: {
-                                sheetId: createResponse.data.sheets[0].properties.sheetId,
-                                dimension: 'COLUMNS',
-                                startIndex: 2,
-                                endIndex: 4,
-                            },
-                            inheritFromBefore: false,
-                        },
-                    },
-                ],
+            range: "A1:B3",
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+                values
             },
         });
         console.info(res);
