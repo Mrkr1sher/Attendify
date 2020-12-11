@@ -123,7 +123,6 @@ app.get("/", (req, res) => { //authorizing them
                         }
                         catch (error) {
                             console.log(error);
-                            delete users[users.indexOf(user)];
                             console.log("Auth failed. Google did not authenticate properly or in time.");
                             res.end();
                         }
