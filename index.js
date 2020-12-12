@@ -89,9 +89,8 @@ app.get("/", (req, res) => { //authorizing them
 
         request.post(url, (error, response, body) => { //sent the query code to Zoom to get access tokens
             body = JSON.parse(body);
-
             let tokenData = body;
-
+            console.log(tokenData);
             if (body.access_token) {
 
                 // Step 4:
@@ -115,6 +114,10 @@ app.get("/", (req, res) => { //authorizing them
                                 access_token: tokenData.access_token
                             }
                         };
+                        if (users.map(u => u.id).indexOf(body.id) > -1) {
+                            res.end("You have already verified.")
+                            return;
+                        }
                         try {
                             if (await isAuthenticated(user)) {
                                 console.log("Auth completed. You have been verified with Google.");
@@ -314,8 +317,10 @@ app.post("/", (req, res) => {
             for (let i = 0; i < joins.length; i++) {
                 // If for some reason the final leave time is not recorded for a participant,
                 // set their final leave time to just be the meeting's end time.
-                if (leaves == null || leaves[i] == null)
-                    leaves[i] = etime;
+                if (leaves == null)
+                    leaves = [];
+                if (leaves[i] == null)
+                    leaves.push(etime);
                 attended += new Date(leaves[i]) - new Date(joins[i]);
             }
             // Set the value of the percent 

@@ -2,14 +2,15 @@
   {
     "id": "75szwM-qQrOhkj_9j6F8rQ",
     "meetings": [
+      null,
       {
         "duration": 0,
-        "start_time": "2020-12-10T23:12:39Z",
+        "start_time": "2020-12-12T01:11:21Z",
         "timezone": "",
         "topic": "Aditya Prasad's Personal Meeting Room",
         "id": "5468788635",
         "type": 4,
-        "uuid": "2meU4t2KQgCnlxbYgEQWUA==",
+        "uuid": "nluLRqUiTgatB3Usau9wPA==",
         "host_id": "75szwM-qQrOhkj_9j6F8rQ",
         "participants": [
           {
@@ -17,35 +18,34 @@
             "user_name": "Aditya Prasad",
             "id": "75szwM-qQrOhkj_9j6F8rQ",
             "email": "22ap0894@wwprsd.org",
-            "join_time": "2020-12-10T23:12:39Z",
-            "leave_time": "2020-12-10T23:12:47Z"
+            "join_times": [
+              [
+                "12/11/2020",
+                "8:11:21 PM"
+              ]
+            ],
+            "leave_times": [
+              [
+                "12/11/2020",
+                "8:11:25 PM"
+              ]
+            ],
+            "percent_attended": 100
           }
         ],
-        "end_time": "2020-12-10T23:12:47Z"
-      },
-      {
-        "duration": 0,
-        "start_time": "2020-12-10T23:34:42Z",
-        "timezone": "",
-        "topic": "Aditya Prasad's Personal Meeting Room",
-        "id": "5468788635",
-        "type": 4,
-        "uuid": "oIlOJhQPQlKg1AwV1WncPg==",
-        "host_id": "75szwM-qQrOhkj_9j6F8rQ",
-        "participants": [],
-        "end_time": "2020-12-10T23:34:44Z"
+        "end_time": "8:11:25 PM"
       }
     ],
     "zoomCreds": {
-      "refresh_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiIyZDg4OTRlMS05YThmLTQzYTctOTNmOS0xNTRmNTZmOWYwNzIifQ.eyJ2ZXIiOjcsImF1aWQiOiIxOWMyNTI0Y2YwNzM0ZWEyM2ZmMTEwMDI4MTg3M2E0NiIsImNvZGUiOiJiczFuS29rcjA0Xzc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJpc3MiOiJ6bTpjaWQ6NTU4b3J0OVVRWE85VUM2RW95aUh0ZyIsImdubyI6MCwidHlwZSI6MSwidGlkIjowLCJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiI3NXN6d00tcVFyT2hral85ajZGOHJRIiwibmJmIjoxNjA3NjQxOTM0LCJleHAiOjIwODA2ODE5MzQsImlhdCI6MTYwNzY0MTkzNCwiYWlkIjoiNlhKdWhLQ0hSam1SZzFvdEVuSEdndyIsImp0aSI6ImQzZTZiZThjLWRlODAtNDBlYS1iZjY4LTg1YzQ2NzAyOWE0MyJ9.g7QYuGy9crpnCuF3csgvski_Cc47ZyNocMvtpF22MAbej6TgzRUstRYS4uX6j5ATvzfymf72JkuydR9j2g9XaQ",
-      "access_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiI5ZmM2NmRhZS05NTM4LTRhZDAtOTc1ZC00MTY1ZGE0ZDZjOWMifQ.eyJ2ZXIiOjcsImF1aWQiOiIxOWMyNTI0Y2YwNzM0ZWEyM2ZmMTEwMDI4MTg3M2E0NiIsImNvZGUiOiJiczFuS29rcjA0Xzc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJpc3MiOiJ6bTpjaWQ6NTU4b3J0OVVRWE85VUM2RW95aUh0ZyIsImdubyI6MCwidHlwZSI6MCwidGlkIjowLCJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiI3NXN6d00tcVFyT2hral85ajZGOHJRIiwibmJmIjoxNjA3NjQxOTM0LCJleHAiOjE2MDc2NDU1MzQsImlhdCI6MTYwNzY0MTkzNCwiYWlkIjoiNlhKdWhLQ0hSam1SZzFvdEVuSEdndyIsImp0aSI6ImVjM2ZhNThiLTgxMWUtNDZjMy04NDBhLWQwYjJhNjIyYzI4NyJ9.p2CJSpTIMuGdob39TAldJz5SXdes-JncEL92XRr7ykzfHdfmuYJl5qwpyR4j6J-WkeV5-tl2-lW-14TVZfnmoA"
+      "refresh_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiIzZGVhMDY5ZS1mOGUxLTRiMTktYjVlZi0yYTM2NzBmZTFhMzEifQ.eyJ2ZXIiOjcsImF1aWQiOiIxOWMyNTI0Y2YwNzM0ZWEyM2ZmMTEwMDI4MTg3M2E0NiIsImNvZGUiOiIzQTN3RUpiaXJHXzc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJpc3MiOiJ6bTpjaWQ6NTU4b3J0OVVRWE85VUM2RW95aUh0ZyIsImdubyI6MCwidHlwZSI6MSwidGlkIjowLCJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiI3NXN6d00tcVFyT2hral85ajZGOHJRIiwibmJmIjoxNjA3NzM1NDAxLCJleHAiOjIwODA3NzU0MDEsImlhdCI6MTYwNzczNTQwMSwiYWlkIjoiNlhKdWhLQ0hSam1SZzFvdEVuSEdndyIsImp0aSI6ImZhODFhZDQxLTIzMWUtNGUxYi05MTQ1LWU2M2MyYThjNTk5YiJ9.lJ0btCYUpNWE7xWTimtENQX-IdDspuyINoneiz5LiswnDPMOdWroPO0AwSTokj_8VxpgkAP5w4FU--18myN8Bg",
+      "access_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiI3YzY0Mzc1MC0xOTI3LTRjNTktYTJjMi04MjkxNWNmZWI2Y2YifQ.eyJ2ZXIiOjcsImF1aWQiOiIxOWMyNTI0Y2YwNzM0ZWEyM2ZmMTEwMDI4MTg3M2E0NiIsImNvZGUiOiIzQTN3RUpiaXJHXzc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJpc3MiOiJ6bTpjaWQ6NTU4b3J0OVVRWE85VUM2RW95aUh0ZyIsImdubyI6MCwidHlwZSI6MCwidGlkIjowLCJhdWQiOiJodHRwczovL29hdXRoLnpvb20udXMiLCJ1aWQiOiI3NXN6d00tcVFyT2hral85ajZGOHJRIiwibmJmIjoxNjA3NzM1NDAxLCJleHAiOjE2MDc3MzkwMDEsImlhdCI6MTYwNzczNTQwMSwiYWlkIjoiNlhKdWhLQ0hSam1SZzFvdEVuSEdndyIsImp0aSI6ImJmZWYzNjVjLWMxMmEtNGJlZS04NzZjLWJkMjE4ZTI0YjlmYyJ9._700oEFgejivmRMRvOHgoInwhj9mDg-rCIV1lfX3bzbW-bhiIZjDAB6AfwzVU8Ghk1C_tDY8tJjSfUCEwf-1QA"
     },
     "googleCreds": {
-      "access_token": "ya29.a0AfH6SMDOPxK08QhJY553UxSJhMH7fzJoByFI9CN_eWgdPY1T4RFp398J6BdhEMOiKKAJWVoIbXpN591KdXDQhPyiiE6tBnubE2elUBMOo9WkxAP7hlTtdJCHJXuV4zWrY1aq-yQVdd4aahCi4srJax_mTu6X6HEk0rm36CFlhNw",
-      "refresh_token": "1//0dNWOzdMgGsZ1CgYIARAAGA0SNwF-L9IrYeyXdMs4iVebiZdY8092p1qATczpA91jGiMCMBqLn1cBMlbzLSqJCK5T4FMLA2ei7Mg",
-      "scope": "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets",
+      "access_token": "ya29.a0AfH6SMDcLZ1fB__3bswsj4LgqQlw82n06sDXbKGHcWbWZrhHkXo3LY2u8_FECcadMwU7B7mp_4gXfprh6Dqni18K4upaQKifFniU3Exctvvs8o5dsZCKSvX3WnDAjYKTd3qcD1Afwvnw3fMD33duA6VMrSZVIgSpxPvanCqpK_w",
+      "refresh_token": "1//0djtvOUABrhs3CgYIARAAGA0SNwF-L9IrDe9okhtTt4srR3vpOc0-KbN2fwJY6s5cfL4gej2fUe9I828fGD4ww7EtpA25q-_OQ6g",
+      "scope": "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/documents",
       "token_type": "Bearer",
-      "expiry_date": 1607645548168
+      "expiry_date": 1607739023322
     }
   }
 ]
