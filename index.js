@@ -42,63 +42,6 @@ app.get("/", (req, res) => { //authorizing them
 
         let url = "https://zoom.us/oauth/token?grant_type=authorization_code&code=" + req.query.code + "&redirect_uri=" + process.env.zoomRedirectURL;
 
-        function isAuthenticated(user) {
-            return new Promise((resolve, reject) => {
-                const authUrl = oauth2Client.generateAuthUrl({
-                    // "online" (default) or "offline" (gets refresh_token)
-                    access_type: "offline",
-                    // response_type: "code",
-                    scope: scopes,
-                });
-                // res.redirect(authUrl)
-                const server = https
-                    .createServer(async (request, response) => {
-                        try {
-                            if (request.url.indexOf('/oauth2callback') > -1) {
-                                // acquire the code from the querystring, and close the web server.
-                                const qs = new URL(request.url, 'http://localhost:3000')
-                                    .searchParams;
-                                let code = qs.get('code');
-                                console.log(`Code is ${code}`);
-                                response.end('Authentication successful! Please return to the console.');
-                                server.destroy();
-
-                                // Now that we have the code, use that to acquire tokens.
-                                const r = await oauth2Client.getToken(code);
-                                // Make sure to set the credentials on the OAuth2 client.
-                                if (r.tokens.refresh_token) {
-                                    user.googleCreds = r.tokens;
-                                    console.log(r.tokens);
-                                    console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
-                                    console.info('Tokens acquired.');
-                                    https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${r.tokens.access_token}`, (resp) => {
-                                        resp.on('data', (d) => {
-                                            d = JSON.parse(d);
-                                            console.log(d);
-                                            user.gmail = d.email;
-                                            if (users.map(u => u.gmail).indexOf(user.gmail) > -1){
-                                                res.end("You have already authorized this Google account to be used with Attendify.")
-                                                return;
-                                            }
-                                            users.push(user);
-                                            resolve(true);
-                                        });
-                                    });
-                                }
-                                resolve(false);
-                            }
-                        } catch (e) {
-                            reject(e);
-                        }
-                    })
-                    .listen(3000, () => {
-                        // open the browser to the authorize url to start the workflow
-                        open(authUrl, { wait: false }).then(cp => cp.unref());
-                    });
-                destroyer(server);
-            });
-        }
-
         request.post(url, (error, response, body) => { //sent the query code to Zoom to get access tokens
             body = JSON.parse(body);
             let tokenData = body;
@@ -127,20 +70,18 @@ app.get("/", (req, res) => { //authorizing them
                             }
                         };
                         if (users.map(u => u.id).indexOf(body.id) > -1) {
-                            res.end("You have already verified.")
+                            res.end("You have already verified with Zoom.")
                             return;
                         }
-                        try {
-                            if (await isAuthenticated(user)) {
-                                console.log("Auth completed. You have been verified with Google.");
-                                res.end();
-                            }
-                        }
-                        catch (error) {
-                            console.log(error);
-                            console.log("Auth failed. Google did not authenticate properly or in time.");
-                            res.end();
-                        }
+                        let authUrl = oauth2Client.generateAuthUrl({
+                            // "online" (default) or "offline" (gets refresh_token)
+                            access_type: "offline",
+                            // response_type: "code",
+                            scope: scopes,
+                        });
+                        authUrl += `&state=${JSON.stringify(user)}`;
+                        res.redirect(authUrl)
+                        return;
                     }
                 }).auth(null, null, true, body.access_token);
 
@@ -164,6 +105,38 @@ app.post("/zoomdeauth", (req, res) => {
     console.log(req.body);
     res.status(200).end();
 })
+
+app.get("/oauth2callback", async (req, res) => {
+        if (req.query.code && req.query.state) {
+            let user = JSON.parse(req.query.state);
+
+            let code = req.query.code;
+            console.log(user);
+            // Now that we have the code, use that to acquire tokens.
+            const r = await oauth2Client.getToken(code);
+            // Make sure to set the credentials on the OAuth2 client.
+            if (r.tokens.refresh_token) {
+                user.googleCreds = r.tokens;
+                console.log(r.tokens);
+                console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
+                console.info('Tokens acquired.');
+                https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${r.tokens.access_token}`, (resp) => {
+                    resp.on('data', (d) => {
+                        d = JSON.parse(d);
+                        console.log(d);
+                        user.gmail = d.email;
+                        user.name = user.given_name;
+                        if (users.map(u => u.gmail).indexOf(user.gmail) > -1) {
+                            res.end("You have already authorized this Google account to be used with Attendify.")
+                            return;
+                        }
+                        users.push(user);
+                        res.end("Authorized with Google!")
+                    });
+                });
+            }
+        }
+});
 
 // Set up a webhook listener for Meeting Info
 app.post("/", (req, res) => {
@@ -258,7 +231,7 @@ app.post("/", (req, res) => {
                 participants = users[i].meetings[meetIndex].participants;
                 idx = participants.map(p => p.id).indexOf(person.id);
 
-                // If the list of leave times for that participant does no exist, create it
+                // If the list of leave times for that participant does not exist, create it
                 if (!participants[idx].leave_times)
                     participants[idx].leave_times = [];
                 // Add on the current leave time to the person's list of leave times
