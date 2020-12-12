@@ -14,6 +14,7 @@ const destroyer = require('server-destroy');
 //google api
 const { google } = require("googleapis");
 const sheets = google.sheets('v4');
+const gmail = google.gmail('v1');
 const oauth2Client = new google.auth.OAuth2(
     process.env.googleClientID,
     process.env.googleClientSecret,
@@ -29,6 +30,46 @@ const scopes = [
 let users = [];
 
 app.use(express.json());
+
+//incomplete email function
+async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, i) {
+    auth.setCredentials({
+        refresh_token: users[i].googleCreds.refresh_token
+    });
+    // Obtain user credentials to use for the request
+    google.options({auth});
+
+    // You can use UTF-8 encoding for the subject using the method below.
+    // You can also just use a plain string if you don't need anything fancy.
+    const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+    msg = `<p>Hey there ${users[i].name},</p> <br> <p>${msg}</p> <br> <p>Best,</p> <p>Aditya and Krish from Attendify</p>`
+    let messageParts = [
+        `From: Attendify <${senderEmail}>`,
+        `To: ${users[i].name} <${recipientEmail}>`,
+        'Content-Type: text/html; charset=utf-8',
+        'MIME-Version: 1.0',
+        `Subject: ${utf8Subject}`,
+        '',
+         msg,
+    ];
+    const message = messageParts.join('\n');
+
+    // The body needs to be base64url encoded.
+    const encodedMessage = Buffer.from(message)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+    const res = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+            raw: encodedMessage,
+        },
+    });
+    console.log(res.data);
+    return res.data;
+}
 
 app.get("/", (req, res) => { //authorizing them
 
@@ -101,16 +142,23 @@ app.get("/", (req, res) => { //authorizing them
 });
 
 // Sets up webhook for Zoom Deauthorization
-app.post("/zoomdeauth", (req, res) => {
+app.post("/zoomdeauth", async (req, res) => {
     if (req.headers.authorization === process.env.zoomVerificationToken) {
         console.log(req.body);
-        if (users.map(u => u.id).indexOf(req.body.payload.user_id) > -1) {
-            console.log(`Deleted user ${users[users.map(u => u.id).indexOf(req.body.payload.user_id)].name} from memory.`);
-            delete users[users.map(u => u.id).indexOf(req.body.payload.user_id)];
-            fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
-                if (err) throw err;
-                console.log("Updated current-users.json!");
-            });
+        let userIndex = users.map(u => u.id).indexOf(req.body.payload.user_id);
+        if (userIndex > -1) {
+            await sendEmail(oauth2Client,
+                "Attendify Deauthorized", users[userIndex].gmail, users[userIndex].gmail,
+                "You have successfully deauthorized Attendify. Please be sure to remove Attendify's access to your Google account by " +
+                    "visiting https://myaccount.google.com/permissions.",
+                userIndex).then(() => {
+                    console.log(`Deleted user ${users[userIndex].name} from memory.`);
+                    delete users[userIndex];
+                    fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
+                        if (err) throw err;
+                        console.log("Updated current-users.json!");
+                    });
+            })
         }
         res.status(200).end();
     }
@@ -131,7 +179,7 @@ app.get("/oauth2callback", async (req, res) => {
                 console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
                 console.info('Tokens acquired.');
                 https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${r.tokens.access_token}`, (resp) => {
-                    resp.on('data', (d) => {
+                    resp.on('data', async d => {
                         d = JSON.parse(d);
                         console.log(d);
                         user.gmail = d.email;
@@ -141,7 +189,17 @@ app.get("/oauth2callback", async (req, res) => {
                             return;
                         }
                         users.push(user);
-                        res.end("Authorized with Google!")
+                        await sendEmail(
+                            oauth2Client,
+                            `Attendify Authorized`,
+                            user.gmail,
+                            user.gmail,
+                            `You have successfully authorized Attendify. You will now be notified and sent 
+                            a spreadsheet with meeting attendance for all future meetings.`,
+                            users.indexOf(user)
+                        ).then(() => {
+                            res.end("Authorized with Google!");
+                        })
                     });
                 });
             }
@@ -196,12 +254,21 @@ app.post("/", async (req, res) => {
                 let sheetTitle = `${meeting.topic} ${date} ${start[1]} - ${end[1]}`;
 
                 // This is the part where we have to create a spreadsheet and place it in user's drive.
-                await createSheet(oauth2Client, sheetTitle, i, participants).then(r => {
-                    fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
-                        if (err) throw err;
-                        console.log("Updated!");
-                    });
-                    delete users[i].meetings[meetIndex];
+                await createSheet(oauth2Client, sheetTitle, i, participants).then(async url => {
+                    await sendEmail(
+                        oauth2Client,
+                        `Spreadsheet created: ${meeting.topic}`,
+                        users[i].gmail,
+                        users[i].gmail,
+                        `Your spreadsheet has been created at ${url}. Be sure to check it out!`,
+                        i
+                    ).then(() => {
+                        fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
+                            if (err) throw err;
+                            console.log("Updated!");
+                        });
+                        delete users[i].meetings[meetIndex];
+                    })
                 });
                 break;
 
@@ -250,55 +317,9 @@ app.post("/", async (req, res) => {
         }
     }
 
-    //incomplete email function
-    async function sendEmail() {
-        // Obtain user credentials to use for the request
-        const auth = await authenticate({
-            keyfilePath: path.join(__dirname, '../oauth2.keys.json'),
-            scopes: [
-                'https://mail.google.com/',
-                'https://www.googleapis.com/auth/gmail.modify',
-                'https://www.googleapis.com/auth/gmail.compose',
-                'https://www.googleapis.com/auth/gmail.send',
-            ],
-        });
-        google.options({auth});
-
-        // You can use UTF-8 encoding for the subject using the method below.
-        // You can also just use a plain string if you don't need anything fancy.
-        const subject = '🤘 Hello 🤘';
-        const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-        const messageParts = [
-            'From: Justin Beckwith <beckwith@google.com>',
-            'To: Justin Beckwith <beckwith@google.com>',
-            'Content-Type: text/html; charset=utf-8',
-            'MIME-Version: 1.0',
-            `Subject: ${utf8Subject}`,
-            '',
-            'This is a message just to say hello.',
-            'So... <b>Hello!</b>  🤘❤️😎',
-        ];
-        const message = messageParts.join('\n');
-
-        // The body needs to be base64url encoded.
-        const encodedMessage = Buffer.from(message)
-            .toString('base64')
-            .replace(/\+/g, '-')
-            .replace(/\//g, '_')
-            .replace(/=+$/, '');
-
-        const res = await gmail.users.messages.send({
-            userId: 'me',
-            requestBody: {
-                raw: encodedMessage,
-            },
-        });
-        console.log(res.data);
-        return res.data;
-    }
     // function to create spreadsheet
     async function createSheet(auth, msg, i, participants) {
-        oauth2Client.setCredentials({
+        auth.setCredentials({
             refresh_token: users[i].googleCreds.refresh_token
         });
         google.options({ auth });
@@ -343,7 +364,7 @@ app.post("/", async (req, res) => {
         });
         console.info(res);
         console.log(`Created spreadsheet at link: ${createResponse.data.spreadsheetUrl}`);
-        return res.data;
+        return createResponse.data.spreadsheetUrl;
     }
 
     // Function to calculate the percentage of the meeting that the participant attended
