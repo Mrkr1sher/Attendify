@@ -5,7 +5,7 @@ const request = require("request")
 // Run the express app
 const express = require("express")
 const app = express()
-const http = require('http');
+const https = require('https');
 const url = require('url');
 const open = require('open');
 const destroyer = require('server-destroy');
@@ -50,7 +50,7 @@ app.get("/", (req, res) => { //authorizing them
                     scope: scopes,
                 });
                 // res.redirect(authUrl)
-                const server = http
+                const server = https
                     .createServer(async (request, response) => {
                         try {
                             if (request.url.indexOf('/oauth2callback') > -1) {
@@ -70,8 +70,19 @@ app.get("/", (req, res) => { //authorizing them
                                     console.log(r.tokens);
                                     console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
                                     console.info('Tokens acquired.');
-                                    users.push(user);
-                                    resolve(true);
+                                    https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${r.tokens.access_token}`, (resp) => {
+                                        resp.on('data', (d) => {
+                                            d = JSON.parse(d);
+                                            console.log(d);
+                                            user.gmail = d.email;
+                                            if (users.map(u => u.gmail).indexOf(user.gmail) > -1){
+                                                res.end("You have already authorized this Google account to be used with Attendify.")
+                                                return;
+                                            }
+                                            users.push(user);
+                                            resolve(true);
+                                        });
+                                    });
                                 }
                                 resolve(false);
                             }
