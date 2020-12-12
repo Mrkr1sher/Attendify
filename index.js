@@ -373,5 +373,10 @@ app.post("/", async (req, res) => {
 
 });
 
-
-app.listen(4000, () => console.log(`Zoom app listening at PORT: 4000`))
+let PORT = process.env.PORT;
+if (PORT){
+    app.listen(PORT, () => console.log(`Zoom app listening at PORT: ${PORT}`))
+}
+else {
+    app.listen(4000, () => console.log(`Zoom app listening at PORT: 4000`))
+}
