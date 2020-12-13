@@ -75,6 +75,10 @@ async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, i) {
     return res.data;
 }
 
+app.get("/dreamhost", (req, res) => {
+    res.send("Congrats, site is online.");
+})
+
 app.get("/", (req, res) => { //authorizing them
 
     // Step 1: 
