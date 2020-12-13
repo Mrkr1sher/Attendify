@@ -1,3 +1,7 @@
+if (typeof(PhusionPassenger) !== 'undefined') {
+    PhusionPassenger.configure({ autoInstall: false });
+}
+
 // Bring in environment secrets through dotenv
 require("dotenv/config")
 const fs = require("fs");
@@ -406,8 +410,12 @@ app.post("/", async (req, res) => {
 
 });
 
-let PORT = process.env.PORT;
-if (!PORT){
-    PORT = 443;
+if (typeof(PhusionPassenger) !== 'undefined') {
+    app.listen('passenger', () => {
+        console.log("Attendify app listening on Passenger");
+    });
+} else {
+    app.listen(4000, () => {
+        console.log("Attendify app listening on PORT 4000");
+    });
 }
-app.listen(PORT, () => console.log(`Zoom app listening at PORT: ${PORT}`))
