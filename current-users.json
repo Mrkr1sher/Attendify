@@ -1,3 +1,54 @@
 [
-  null
+  {
+    "id": "75szwM-qQrOhkj_9j6F8rQ",
+    "meetings": [
+      null,
+      null,
+      null,
+      {
+        "duration": 0,
+        "start_time": "2020-12-13T03:47:24Z",
+        "timezone": "",
+        "topic": "Aditya Prasad's Personal Meeting Room",
+        "id": "5468788635",
+        "type": 4,
+        "uuid": "mDqmMi/+TCO0stGbdNuhDA==",
+        "host_id": "75szwM-qQrOhkj_9j6F8rQ",
+        "participants": [],
+        "end_time": "10:47:26 PM"
+      }
+    ],
+    "zoomCreds": {
+      "refresh_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiI4ZDMxZGU0NC1mZDRkLTRmYTktYWJhYy04ODQwMjA5OGVhOWIifQ.eyJ2ZXIiOjcsImF1aWQiOiI4NTFjY2FlZDE5ZGExNWJjNjdjNDY3OGZhZTU5MDdmOCIsImNvZGUiOiI4WU9yQ0VpeE1RXzc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJpc3MiOiJ6bTpjaWQ6THJYNmtFclBSRkNoWmt1MU5XeTJ3IiwiZ25vIjowLCJ0eXBlIjoxLCJ0aWQiOjAsImF1ZCI6Imh0dHBzOi8vb2F1dGguem9vbS51cyIsInVpZCI6Ijc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJuYmYiOjE2MDc4Mjg1MDcsImV4cCI6MjA4MDg2ODUwNywiaWF0IjoxNjA3ODI4NTA3LCJhaWQiOiI2WEp1aEtDSFJqbVJnMW90RW5IR2d3IiwianRpIjoiZjE4ODZiZGQtY2Y2Yi00YWUwLWI1ZTYtYzFiYTIzYWJjMDVkIn0.3bEaQnF0STsPM7oU3pEo6z-g-UlIExGfVDeYA8m4inJex77aP20uOycGtO6d3XGyfhVTox_YY8TYhZEM5WWcxA",
+      "access_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiJjMTVlM2I2Yi03YTkzLTQ1NjktYjYyNS04YWY4YTgxMzE0MzkifQ.eyJ2ZXIiOjcsImF1aWQiOiI4NTFjY2FlZDE5ZGExNWJjNjdjNDY3OGZhZTU5MDdmOCIsImNvZGUiOiI4WU9yQ0VpeE1RXzc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJpc3MiOiJ6bTpjaWQ6THJYNmtFclBSRkNoWmt1MU5XeTJ3IiwiZ25vIjowLCJ0eXBlIjowLCJ0aWQiOjAsImF1ZCI6Imh0dHBzOi8vb2F1dGguem9vbS51cyIsInVpZCI6Ijc1c3p3TS1xUXJPaGtqXzlqNkY4clEiLCJuYmYiOjE2MDc4Mjg1MDcsImV4cCI6MTYwNzgzMjEwNywiaWF0IjoxNjA3ODI4NTA3LCJhaWQiOiI2WEp1aEtDSFJqbVJnMW90RW5IR2d3IiwianRpIjoiMjAxYjI3ZTgtMGY0MS00YmNkLTllZTAtZTA1NWQyNGIyZjA5In0.xwy38-9y-yuKJqytoK3dzYQ6fXYwhw7TbD9BIjbZLVZfH8Y3Xo8uwVV59x_IX4Y9hlI6gDAeixCbAT5Pardb5A"
+    },
+    "googleCreds": {
+      "access_token": "ya29.a0AfH6SMATZd9shFnT3fLU52L0p4LB_jsY52ckvIL7KWx0fLmyoo7BvjnQfjYchBDjHCCGr3pXKAyYJ1y6ER9c9CL5y0CITWaAn8VnL-T1aIfW5sibqkFi7i6cXOXIlmiEXdffTsoRramsqCMcpbRhZtucLA6exrrFzP-bBlP6F0w",
+      "refresh_token": "1//0dx_vlA4winDOCgYIARAAGA0SNwF-L9IroWq8wrRIo03S8VhWXw61zG9DTgdYGXpExScQ70tju0fh6BqT3Dim6IvawzQfyaZCows",
+      "scope": "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.compose https://www.googleapis.com/auth/spreadsheets",
+      "token_type": "Bearer",
+      "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImUxOTdiZjJlODdiZDE5MDU1NzVmOWI2ZTVlYjQyNmVkYTVkNTc0ZTMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI1NDg4MDA5NDIxNy0zZG9yMTB1OTNuMjY1dnQwOGZvYjE5Ymp1NHNnZWo4bi5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImF1ZCI6IjU0ODgwMDk0MjE3LTNkb3IxMHU5M24yNjV2dDA4Zm9iMTlianU0c2dlajhuLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwic3ViIjoiMTA4MTgyNDMxMTM1OTQzNDQ5NjQxIiwiaGQiOiJ3d3Byc2Qub3JnIiwiZW1haWwiOiIyMmFwMDg5NEB3d3Byc2Qub3JnIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImF0X2hhc2giOiJMZktPUzdfajFhcUhENUplVE1ReHNnIiwiaWF0IjoxNjA3ODI4NTI3LCJleHAiOjE2MDc4MzIxMjd9.YdHjG9T72fI3QYboXg-rzSm1EceauxZxN4XJc4po-DSahlTQODNj98SKzg1ZsOdn4yBjhGWyoWdBL3hfKA0_wACoFWdTm4M5nI3jW4cR7UNwdI7-r_lwqjTUJIXZ-sXoTSXXMtK4WinkN1d3W3DoAlm-6XSyFPJ5Vf_czPPKOoOGfCimRGH1LaH9zMDrMdyRfC_r0FPOSjVxZFxqIw5REN8Zfv6Beu0iRajKdND4gyFP6BxgZUjGFGmC5CkO_hJf7YyADMPZdOxysMYh9Kk7IFqljv0MR5mYv_M9xTbo634ku3MKKmU8LKWZsTJgRfweKHN3gxFpcBoqrsvwa4LG9g",
+      "expiry_date": 1607832123229
+    },
+    "gmail": "22ap0894@wwprsd.org",
+    "name": "Aditya Prasad"
+  },
+  null,
+  {
+    "id": "D30SoZWLT-ySJM5UEXcJTA",
+    "meetings": [],
+    "zoomCreds": {
+      "refresh_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiJlNmEwZTYzNi1iYjgzLTQ2ZTYtOTI4ZS1mY2ZkZGZlNzI1ZTEifQ.eyJ2ZXIiOjcsImF1aWQiOiIyMTFhZDJmODczYjRkZGJhOTQwNTZkMmMyODIzNDhlNiIsImNvZGUiOiIyR1p3OG1CUWx4X0QzMFNvWldMVC15U0pNNVVFWGNKVEEiLCJpc3MiOiJ6bTpjaWQ6THJYNmtFclBSRkNoWmt1MU5XeTJ3IiwiZ25vIjowLCJ0eXBlIjoxLCJ0aWQiOjAsImF1ZCI6Imh0dHBzOi8vb2F1dGguem9vbS51cyIsInVpZCI6IkQzMFNvWldMVC15U0pNNVVFWGNKVEEiLCJuYmYiOjE2MDc4Mjk1NTEsImV4cCI6MjA4MDg2OTU1MSwiaWF0IjoxNjA3ODI5NTUxLCJhaWQiOiJEWmNFX05lQlFjR1hmQ1BPZzdGU2lBIiwianRpIjoiODg4Y2EwNWQtODZkNi00Y2E5LThhYTgtMDhmY2JlNWRmZGUyIn0.U9LQAA6LFqAxXc-XLh1igtsHAZErK5kBdfad1M_PKizEqDXi4CCqNRsyVZsRXGEAN1J9kzT7UZcOfyQ1WVq2nw",
+      "access_token": "eyJhbGciOiJIUzUxMiIsInYiOiIyLjAiLCJraWQiOiJjNzhhYjBjMy1hNGRhLTQ5YmUtOGRjMy0yNmRhMjE2OWU2OGYifQ.eyJ2ZXIiOjcsImF1aWQiOiIyMTFhZDJmODczYjRkZGJhOTQwNTZkMmMyODIzNDhlNiIsImNvZGUiOiIyR1p3OG1CUWx4X0QzMFNvWldMVC15U0pNNVVFWGNKVEEiLCJpc3MiOiJ6bTpjaWQ6THJYNmtFclBSRkNoWmt1MU5XeTJ3IiwiZ25vIjowLCJ0eXBlIjowLCJ0aWQiOjAsImF1ZCI6Imh0dHBzOi8vb2F1dGguem9vbS51cyIsInVpZCI6IkQzMFNvWldMVC15U0pNNVVFWGNKVEEiLCJuYmYiOjE2MDc4Mjk1NTEsImV4cCI6MTYwNzgzMzE1MSwiaWF0IjoxNjA3ODI5NTUxLCJhaWQiOiJEWmNFX05lQlFjR1hmQ1BPZzdGU2lBIiwianRpIjoiOWJhN2I1MTYtMGU3MC00NzNkLWEwN2QtZWI2ODYzZWRjOTFhIn0.6eJI9B3ETMVolT235q7BydbWN2LDS5XvVnkbzqJYsaxjbw8IIMK2DccQD8HqK5Mzc_i1q-x8UFJXbm82KuLf4w"
+    },
+    "googleCreds": {
+      "access_token": "ya29.a0AfH6SMBEojZ6ZxOOhJs3x5MD3hevYSiltJybkaOLKrAbpb_iyEdCJwKIZfxG_v8MzZ_8QhJsbhw3hQ2xvly5k7a-U1dVwUFI8EjGe6ElPzyAiteq1LnZwaSsxegCXTIsV_5y8CkOjs_M7GC4wjRplqPN1CZ9ZOWFLwDwHCSRq10",
+      "refresh_token": "1//0dsSW92p1pORWCgYIARAAGA0SNwF-L9IrEmGywi7BVJymlJef1CVC3KEyPSssAM5EX1lYpciyiQIpSChe59zETgkeut3enD7Jz84",
+      "scope": "https://www.googleapis.com/auth/gmail.compose openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets",
+      "token_type": "Bearer",
+      "id_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImUxOTdiZjJlODdiZDE5MDU1NzVmOWI2ZTVlYjQyNmVkYTVkNTc0ZTMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI1NDg4MDA5NDIxNy0zZG9yMTB1OTNuMjY1dnQwOGZvYjE5Ymp1NHNnZWo4bi5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImF1ZCI6IjU0ODgwMDk0MjE3LTNkb3IxMHU5M24yNjV2dDA4Zm9iMTlianU0c2dlajhuLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwic3ViIjoiMTAxOTc1MTExNDczNjIyMzY0MjMyIiwiaGQiOiJ3d3Byc2Qub3JnIiwiZW1haWwiOiIyMmt0MTEwMkB3d3Byc2Qub3JnIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsImF0X2hhc2giOiItQl9nWE52a2JOX2ZuS2Fkd3V2ZzN3IiwiaWF0IjoxNjA3ODI5NTY0LCJleHAiOjE2MDc4MzMxNjR9.EEZswGdURWFRqIj8vOPdlQ_AkC4Led3I87Q3k2_9I5dA0S-SY_KMxlATKfhRzDwQYjtAUiIxJRVYkrk7Zvj5d5_eH1Rp6FCC5YzTGCAqeY1nJTLcQjAsS_25wNrOckfoQmeCSTZlGBsDqqG0iQzEfYhuAOp_z9IwBLtcaBYBfwQPZ8g-9hQj91e5IoOJu5PVO2qSzCU1aECBbPQXjiX1-Eu3uYQOZ-yx_ogo1SInMCqMFQZdHTt9xh1-wtHtW9Z_Y3vzlvSlhG3wskNP0V00wqin42v6l33f2DQxsiD8Bw3-PMYcju_p6stqPojVO7DnTZMQjj4wk6c2CSBj6dOpkA",
+      "expiry_date": 1607833160317
+    },
+    "gmail": "22kt1102@wwprsd.org"
+  }
 ]

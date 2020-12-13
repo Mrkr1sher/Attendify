@@ -42,7 +42,11 @@ async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, i) {
     // You can use UTF-8 encoding for the subject using the method below.
     // You can also just use a plain string if you don't need anything fancy.
     const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-    msg = `<p>Hey there ${users[i].name},</p> <br> <p>${msg}</p> <br> <p>Best,</p> <p>Aditya and Krish from Attendify</p>`
+    let userName = "";
+    if (users[i].name) {
+        userName = users[i].name;
+    }
+    msg = `<p>Hey there ${userName},</p> <br> <p>${msg}</p> <br> <p>Best,</p> <p>Aditya and Krish from Attendify</p>`
     let messageParts = [
         `From: Attendify <${senderEmail}>`,
         `To: ${users[i].name} <${recipientEmail}>`,
@@ -234,6 +238,7 @@ app.post("/", async (req, res) => {
 
                 // Add this meeting to the list of meetings under the user's data
                 users[i].meetings.push(meeting);
+                console.log("Finished meeting start stuff");
                 break;
 
             case "meeting.ended":
@@ -268,6 +273,7 @@ app.post("/", async (req, res) => {
                             console.log("Updated!");
                         });
                         delete users[i].meetings[meetIndex];
+                        console.log("Finished meeting end stuff");
                     })
                 });
                 break;
@@ -294,6 +300,7 @@ app.post("/", async (req, res) => {
                     delete person.join_time;
                     participants.push(person);
                 }
+                console.log("Finished participant join stuff");
                 break;
 
             case "meeting.participant_left":
@@ -307,12 +314,13 @@ app.post("/", async (req, res) => {
                     break;
                 participants = users[i].meetings[meetIndex].participants;
                 idx = participants.map(p => p.id).indexOf(person.id);
-
+                console.log("idx is " + idx)
                 // If the list of leave times for that participant does not exist, create it
                 if (!participants[idx].leave_times)
                     participants[idx].leave_times = [];
                 // Add on the current leave time to the person's list of leave times
                 participants[idx].leave_times.push(leave_time);
+                console.log("Finished participant leave stuff");
                 break;
         }
     }
