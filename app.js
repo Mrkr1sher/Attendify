@@ -408,6 +408,6 @@ app.post("/", async (req, res) => {
 
 let PORT = process.env.PORT;
 if (!PORT){
-    PORT = 80;
+    PORT = 443;
 }
 app.listen(PORT, () => console.log(`Zoom app listening at PORT: ${PORT}`))
