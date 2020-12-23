@@ -1,7 +1,3 @@
-if (typeof(PhusionPassenger) !== 'undefined') {
-    PhusionPassenger.configure({ autoInstall: false });
-}
-
 // Bring in environment secrets through dotenv
 require("dotenv/config")
 const fs = require("fs");
@@ -10,10 +6,8 @@ const request = require("request")
 const express = require("express")
 const app = express()
 const https = require('https');
-const url = require('url');
-const open = require('open');
-const destroyer = require('server-destroy');
-
+const mongoose = require("mongoose");
+const util = require('util')
 
 //google api
 const { google } = require("googleapis");
@@ -35,22 +29,54 @@ let users = [];
 
 app.use(express.json());
 
+mongoose.connect("mongodb+srv://attendify-admin:Atar1_1977_release@cluster0.qvdzj.mongodb.net/usersDB", { useNewUrlParser: true });
+
+const userSchema = new mongoose.Schema({
+    userInfo: [Object]
+});
+/*
+users: [{
+        meetings: [{
+            duration: Number,
+            startTime: String,
+            timezone: String,
+            topic: String,
+            id: String,
+            type: Number,
+            uuid: String,
+            hostID: String,
+            participants: Object,
+            endTime: String,
+        }],
+        zoomCreds: {
+            refreshToken: String,
+            accessToken: String
+        },
+        googleCreds: {
+            tokenType: String,
+            expiryDate: Number,
+            refreshToken: String,
+            accessToken: String,
+            scope: String
+        },
+        gmail: String,
+        name: String
+    }]*/
+
+const User = mongoose.model("User", userSchema);
+
 //incomplete email function
 async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, i) {
     auth.setCredentials({
         refresh_token: users[i].googleCreds.refresh_token
     });
     // Obtain user credentials to use for the request
-    google.options({auth});
+    google.options({ auth });
 
     // You can use UTF-8 encoding for the subject using the method below.
     // You can also just use a plain string if you don't need anything fancy.
     const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-    let userName = "";
-    if (users[i].name) {
-        userName = users[i].name;
-    }
-    msg = `<p>Hey there ${userName},</p> <br> <p>${msg}</p> <br> <p>Best,</p> <p>Aditya and Krish from Attendify</p>`
+    msg = `<p>Hey there ${users[i].name},</p> <br> <p>${msg}</p> <br> <p>Best,</p> <p>Aditya and Krish from Attendify</p>`
     let messageParts = [
         `From: Attendify <${senderEmail}>`,
         `To: ${users[i].name} <${recipientEmail}>`,
@@ -58,7 +84,7 @@ async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, i) {
         'MIME-Version: 1.0',
         `Subject: ${utf8Subject}`,
         '',
-         msg,
+        msg,
     ];
     const message = messageParts.join('\n');
 
@@ -78,10 +104,6 @@ async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, i) {
     console.log(res.data);
     return res.data;
 }
-
-app.get("/dreamhost", (req, res) => {
-    res.send("Congrats, site is online.");
-})
 
 app.get("/", (req, res) => { //authorizing them
 
@@ -162,7 +184,7 @@ app.post("/zoomdeauth", async (req, res) => {
             await sendEmail(oauth2Client,
                 "Attendify Deauthorized", users[userIndex].gmail, users[userIndex].gmail,
                 "You have successfully deauthorized Attendify. Please be sure to remove Attendify's access to your Google account by " +
-                    "visiting https://myaccount.google.com/permissions.",
+                "visiting https://myaccount.google.com/permissions.",
                 userIndex).then(() => {
                     console.log(`Deleted user ${users[userIndex].name} from memory.`);
                     delete users[userIndex];
@@ -170,52 +192,52 @@ app.post("/zoomdeauth", async (req, res) => {
                         if (err) throw err;
                         console.log("Updated current-users.json!");
                     });
-            })
+                })
         }
         res.status(200).end();
     }
 });
 
 app.get("/oauth2callback", async (req, res) => {
-        if (req.query.code && req.query.state) {
-            let user = JSON.parse(req.query.state);
+    if (req.query.code && req.query.state) {
+        let user = JSON.parse(req.query.state);
 
-            let code = req.query.code;
-            console.log(user);
-            // Now that we have the code, use that to acquire tokens.
-            const r = await oauth2Client.getToken(code);
-            // Make sure to set the credentials on the OAuth2 client.
-            if (r.tokens.refresh_token) {
-                user.googleCreds = r.tokens;
-                console.log(r.tokens);
-                console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
-                console.info('Tokens acquired.');
-                https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${r.tokens.access_token}`, (resp) => {
-                    resp.on('data', async d => {
-                        d = JSON.parse(d);
-                        console.log(d);
-                        user.gmail = d.email;
-                        user.name = d.name;
-                        if (users.map(u => u.gmail).indexOf(user.gmail) > -1) {
-                            res.end("You have already authorized this Google account to be used with Attendify.")
-                            return;
-                        }
-                        users.push(user);
-                        await sendEmail(
-                            oauth2Client,
-                            `Attendify Authorized`,
-                            user.gmail,
-                            user.gmail,
-                            `You have successfully authorized Attendify. You will now be notified and sent 
+        let code = req.query.code;
+        console.log(user);
+        // Now that we have the code, use that to acquire tokens.
+        const r = await oauth2Client.getToken(code);
+        // Make sure to set the credentials on the OAuth2 client.
+        if (r.tokens.refresh_token) {
+            user.googleCreds = r.tokens;
+            console.log(r.tokens);
+            console.log(`Successful: ${JSON.stringify(req.query, null, 2)}`);
+            console.info('Tokens acquired.');
+            https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${r.tokens.access_token}`, (resp) => {
+                resp.on('data', async d => {
+                    d = JSON.parse(d);
+                    console.log(d);
+                    user.gmail = d.email;
+                    user.name = d.name;
+                    if (users.map(u => u.gmail).indexOf(user.gmail) > -1) {
+                        res.end("You have already authorized this Google account to be used with Attendify.")
+                        return;
+                    }
+                    users.push(user);
+                    await sendEmail(
+                        oauth2Client,
+                        `Attendify Authorized`,
+                        user.gmail,
+                        user.gmail,
+                        `You have successfully authorized Attendify. You will now be notified and sent 
                             a spreadsheet with meeting attendance for all future meetings.`,
-                            users.indexOf(user)
-                        ).then(() => {
-                            res.end("Authorized with Google!");
-                        })
-                    });
+                        users.indexOf(user)
+                    ).then(() => {
+                        res.end("Authorized with Google!");
+                    })
                 });
-            }
+            });
         }
+    }
 });
 
 // Set up a webhook listener for Meeting Info
@@ -246,7 +268,7 @@ app.post("/", async (req, res) => {
 
                 // Add this meeting to the list of meetings under the user's data
                 users[i].meetings.push(meeting);
-                console.log("Finished meeting start stuff");
+                addDB();
                 break;
 
             case "meeting.ended":
@@ -280,8 +302,8 @@ app.post("/", async (req, res) => {
                             if (err) throw err;
                             console.log("Updated!");
                         });
+                        updateDB();
                         delete users[i].meetings[meetIndex];
-                        console.log("Finished meeting end stuff");
                     })
                 });
                 break;
@@ -308,7 +330,7 @@ app.post("/", async (req, res) => {
                     delete person.join_time;
                     participants.push(person);
                 }
-                console.log("Finished participant join stuff");
+                updateDB();
                 break;
 
             case "meeting.participant_left":
@@ -322,13 +344,13 @@ app.post("/", async (req, res) => {
                     break;
                 participants = users[i].meetings[meetIndex].participants;
                 idx = participants.map(p => p.id).indexOf(person.id);
-                console.log("idx is " + idx)
+
                 // If the list of leave times for that participant does not exist, create it
                 if (!participants[idx].leave_times)
                     participants[idx].leave_times = [];
                 // Add on the current leave time to the person's list of leave times
                 participants[idx].leave_times.push(leave_time);
-                console.log("Finished participant leave stuff");
+                updateDB();
                 break;
         }
     }
@@ -361,11 +383,11 @@ app.post("/", async (req, res) => {
         });
         let relevantData = participants.map(p => {
             let join_times_sheet = "";
-            let leave_times_sheet = ""; 
+            let leave_times_sheet = "";
             for (let i = 0; i < p.join_times.length; i++) {
                 join_times_sheet += p.join_times[i][1] + ", ";
                 leave_times_sheet += p.leave_times[i][1] + ", ";
-                
+
             }
             return [p.user_name, Math.round(p.percent_attended), join_times_sheet, leave_times_sheet];
         });
@@ -395,9 +417,11 @@ app.post("/", async (req, res) => {
                 // If for some reason the final leave time is not recorded for a participant,
                 // set their final leave time to just be the meeting's end time.
                 if (leaves == null)
-                    leaves = [];
-                if (leaves[i] == null)
+                    p.leave_times = leaves = [];
+                if (leaves[i] == null) {
+                    p.leave_times.push(etime);
                     leaves.push(etime);
+                }
                 attended += new Date(leaves[i]) - new Date(joins[i]);
             }
             // Set the value of the percent 
@@ -408,14 +432,26 @@ app.post("/", async (req, res) => {
         return new Date(str).toLocaleString("en-US", { timeZone: "America/New_York" }).split(", ");
     }
 
+    function addDB() {
+        const user = new User({
+            userInfo: users
+        });
+        user.save();
+    }
+
+    function updateDB() {
+        User.deleteMany({}, function (err) {
+            if (err) return handleError(err);
+        });
+        addDB();
+    }
+
 });
 
-if (typeof(PhusionPassenger) !== 'undefined') {
-    app.listen('passenger', () => {
-        console.log("Attendify app listening on Passenger");
-    });
-} else {
-    app.listen(4000, () => {
-        console.log("Attendify app listening on PORT 4000");
-    });
+let PORT = process.env.PORT;
+if (PORT) {
+    app.listen(PORT, () => console.log(`Zoom app listening at PORT: ${PORT}`))
+}
+else {
+    app.listen(4000, () => console.log(`Zoom app listening at PORT: 4000`))
 }
