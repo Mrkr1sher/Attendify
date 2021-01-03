@@ -83,9 +83,9 @@ users: [{
 //incomplete email function
 async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoID) {
     // giving refresh token to auth scheme
-
+    const foundUser = await User.findById(mongoID).exec();
     auth.setCredentials({
-        refresh_token: users[mongoID].googleCreds.refresh_token
+        refresh_token: foundUser.userInfo.googleCreds.refresh_token
     });
     // Obtain user credentials to use for the request
     google.options({ auth });
@@ -93,10 +93,10 @@ async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoI
     // You can use UTF-8 encoding for the subject using the method below.
     // You can also just use a plain string if you don't need anything fancy.
     const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-    msg = `<p>Hey there ${users[i].name},</p> <br> <p>${msg}</p> <br> <p>Best,</p> <p>Aditya and Krish from Attendify</p>`
+    msg = `<p>Hey there ${foundUser.userInfo.name},</p> <br> <p>${msg}</p> <br> <p>Best,</p> <p>Aditya and Krish from Attendify</p>`
     let messageParts = [
         `From: Attendify <${senderEmail}>`,
-        `To: ${users[i].name} <${recipientEmail}>`,
+        `To: ${foundUser.userInfo.name} <${recipientEmail}>`,
         'Content-Type: text/html; charset=utf-8',
         'MIME-Version: 1.0',
         `Subject: ${utf8Subject}`,
@@ -154,14 +154,14 @@ app.get("/", (req, res) => { //authorizing them
                     } else {
                         console.log(body);
                         let user = {
-                            _id: body.id,
+                            id: body.id,
                             meetings: [],
                             zoomCreds: {
                                 refresh_token: tokenData.refresh_token,
                                 access_token: tokenData.access_token
                             }
                         };
-                        const foundUser = await User.findById(user._id).exec();
+                        const foundUser = await User.findById(user.id).exec();
                         if (foundUser) {
                             res.end("You have already verified with Zoom.")
                             return;
@@ -256,6 +256,7 @@ app.get("/oauth2callback", async (req, res) => {
                     }
                     // otherwise, made new user
                     const newUser = new User({
+                        _id: user.id,
                         userInfo: user
                     })
                     await newUser.save();
@@ -266,7 +267,7 @@ app.get("/oauth2callback", async (req, res) => {
                         user.gmail,
                         `You have successfully authorized Attendify. You will now be notified and sent 
                             a spreadsheet with meeting attendance for all future meetings.`,
-                        newUser.userInfo._id
+                        user.id
                     );
                     res.send("Authorized with Google!");
                 });

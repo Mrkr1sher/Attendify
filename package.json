@@ -21,6 +21,7 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "googleapis": "^61.0.0",
+    "mongoose": "^5.11.9",
     "open": "^7.3.0",
     "request": "^2.88.2",
     "server-destroy": "^1.0.1"
