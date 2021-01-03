@@ -25,6 +25,7 @@ const oauth2Client = new google.auth.OAuth2(
 const scopes = [
     "https://www.googleapis.com/auth/gmail.compose",
     "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file",
 ];
@@ -33,11 +34,21 @@ let users = [];
 
 app.use(express.json());
 
-mongoose.connect("mongodb+srv://attendify-admin:Atar1_1977_release@cluster0.qvdzj.mongodb.net/usersDB", { useNewUrlParser: true });
+mongoose.connect("mongo://localhost:27017/attendifyDB", { useNewUrlParser: true });
 
 const userSchema = new mongoose.Schema({
-    userInfo: [Object]
+    userInfo: Object
 });
+const stateSchema = new mongoose.Schema({
+    state: String
+});
+
+const User = mongoose.model("USER", userSchema);
+const State = mongoose.model("STATE", stateSchema);
+
+// person.anything = { x: [3, 4, { y: "changed" }] };
+// person.markModified('anything');
+// person.save(); // Mongoose will save changes to `anything`.
 /*
 users: [{
         meetings: [{
@@ -67,12 +78,14 @@ users: [{
         name: String
     }]*/
 
-const User = mongoose.model("User", userSchema);
+
 
 //incomplete email function
-async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, i) {
+async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoID) {
+    // giving refresh token to auth scheme
+
     auth.setCredentials({
-        refresh_token: users[i].googleCreds.refresh_token
+        refresh_token: users[mongoID].googleCreds.refresh_token
     });
     // Obtain user credentials to use for the request
     google.options({ auth });
@@ -141,14 +154,15 @@ app.get("/", (req, res) => { //authorizing them
                     } else {
                         console.log(body);
                         let user = {
-                            id: body.id,
+                            _id: body.id,
                             meetings: [],
                             zoomCreds: {
                                 refresh_token: tokenData.refresh_token,
                                 access_token: tokenData.access_token
                             }
                         };
-                        if (users.map(u => u.id).indexOf(body.id) > -1) {
+                        const foundUser = await User.findById(user._id).exec();
+                        if (foundUser) {
                             res.end("You have already verified with Zoom.")
                             return;
                         }
@@ -158,9 +172,12 @@ app.get("/", (req, res) => { //authorizing them
                             // response_type: "code",
                             scope: scopes,
                         });
+                        const state = new State({
+                            state: JSON.stringify(user)
+                        })
+                        await state.save();
                         authUrl += `&state=${JSON.stringify(user)}`;
-                        res.redirect(authUrl)
-                        return;
+                        res.redirect(authUrl);
                     }
                 }).auth(null, null, true, body.access_token);
 
@@ -204,8 +221,16 @@ app.post("/zoomdeauth", async (req, res) => {
 
 app.get("/oauth2callback", async (req, res) => {
     if (req.query.code && req.query.state) {
+        // check if state is a valid one
+        const foundState = await State.findOne({ state : req.query.state });
+        if (!foundState) {
+            res.send("Malformed state.")
+            return;
+        }
+        // if state was previously there, delete it from the States collection
+        await State.deleteOne({ state : req.query.state });
+        // get state variable and turn it into a JS object which is a user
         let user = JSON.parse(req.query.state);
-
         let code = req.query.code;
         console.log(user);
         // Now that we have the code, use that to acquire tokens.
@@ -222,11 +247,18 @@ app.get("/oauth2callback", async (req, res) => {
                     console.log(d);
                     user.gmail = d.email;
                     user.name = d.name;
-                    if (users.map(u => u.gmail).indexOf(user.gmail) > -1) {
-                        res.end("You have already authorized this Google account to be used with Attendify.")
+                    // look for any user in DB that has the same gmail as this person
+                    const foundUser = await User.findOne({"userInfo.gmail": user.gmail});
+                    if (!foundUser) {
+                        // if found, then kill this auth flow
+                        res.send("You have already authorized this Google account to be used with Attendify.");
                         return;
                     }
-                    users.push(user);
+                    // otherwise, made new user
+                    const newUser = new User({
+                        userInfo: user
+                    })
+                    await newUser.save();
                     await sendEmail(
                         oauth2Client,
                         `Attendify Authorized`,
@@ -234,10 +266,9 @@ app.get("/oauth2callback", async (req, res) => {
                         user.gmail,
                         `You have successfully authorized Attendify. You will now be notified and sent 
                             a spreadsheet with meeting attendance for all future meetings.`,
-                        users.indexOf(user)
-                    ).then(() => {
-                        res.end("Authorized with Google!");
-                    })
+                        newUser.userInfo._id
+                    );
+                    res.send("Authorized with Google!");
                 });
             });
         }
@@ -434,20 +465,6 @@ app.post("/", async (req, res) => {
     }
     function zone(str) {
         return new Date(str).toLocaleString("en-US", { timeZone: "America/New_York" }).split(", ");
-    }
-
-    function addDB() {
-        const user = new User({
-            userInfo: users
-        });
-        user.save();
-    }
-
-    function updateDB() {
-        User.deleteMany({}, function (err) {
-            if (err) return handleError(err);
-        });
-        addDB();
     }
 
 });
