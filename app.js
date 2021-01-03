@@ -203,21 +203,25 @@ app.get("/", (req, res) => { //authorizing them
 app.post("/zoomdeauth", async (req, res) => {
     if (req.headers.authorization === process.env.zoomVerificationToken) {
         console.log(req.body);
-        let userIndex = users.map(u => u.id).indexOf(req.body.payload.user_id);
-        if (userIndex > -1) {
-            await sendEmail(oauth2Client,
-                "Attendify Deauthorized", users[userIndex].gmail, users[userIndex].gmail,
-                "You have successfully deauthorized Attendify. Please be sure to remove Attendify's access to your Google account by " +
-                "visiting https://myaccount.google.com/permissions.",
-                userIndex).then(() => {
-                    console.log(`Deleted user ${users[userIndex].name} from memory.`);
-                    delete users[userIndex];
-                    fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
-                        if (err) throw err;
-                        console.log("Updated current-users.json!");
-                    });
-                })
+        // check to see if the user exists in the DB
+        const foundUser = await User.findById(req.body.payload.user_id).exec();
+        // if they don't exist, then end the callback
+        if (!foundUser) {
+            return;
         }
+        await sendEmail(oauth2Client,
+            "Attendify Deauthorized", foundUser.userInfo.gmail, foundUser.userInfo.gmail,
+            "You have successfully deauthorized Attendify. Please be sure to remove Attendify's access to your Google account by " +
+            "visiting https://myaccount.google.com/permissions.",
+            foundUser._id)
+        console.log(`Deleted user ${foundUser.userInfo.name} from memory.`);
+        // delete user from DB
+        await User.deleteOne( { _id : foundUser._id});
+        const allUsers = await User.find({}).exec();
+        fs.writeFile("current-users.json", JSON.stringify(allUsers, null, 2), (err) => {
+            if (err) throw err;
+            console.log("Updated current-users.json!");
+        });
         res.status(200).end();
     }
 });
@@ -301,15 +305,12 @@ app.post("/", async (req, res) => {
         switch (webhook.event) {
             case "meeting.started":
                 console.log(`${meeting.topic} started at time ${zone(meeting.start_time)[1]}`);
-
-                i = users.map(u => u.id).indexOf(meeting.host_id);
                 meeting.participants = [];
-
-                // Add this meeting to the list of meetings under the user's data
-                users[i].meetings.push(meeting);
-                addDB();
+                // Add this meeting to the array of meetings in this user document
+                User.findByIdAndUpdate(meeting.host_id, {push: {"userInfo.meetings": meeting}}, null, (err, doc) => {
+                    if (err) console.log(err);
+                });
                 break;
-
             case "meeting.ended":
                 let end = zone(meeting.end_time);
                 let start = zone(meeting.start_time);
@@ -324,7 +325,7 @@ app.post("/", async (req, res) => {
 
                 calculatePercent(participants, start, end);
 
-                let date = start[0] == end[0] ? `${start[0]}` : `${start[0]} - ${end[0]}`;
+                let date = start[0] === end[0] ? `${start[0]}` : `${start[0]} - ${end[0]}`;
                 let sheetTitle = `${meeting.topic} ${date} ${start[1]} - ${end[1]}`;
 
                 // This is the part where we have to create a spreadsheet and place it in user's drive.
@@ -351,10 +352,11 @@ app.post("/", async (req, res) => {
                 person = meeting.participant;
                 let join_time = zone(person.join_time);
                 console.log(`${person.user_name} joined ${meeting.topic} at time ${join_time[1]}`);
-
+                // getting the user
                 i = users.map(u => u.id).indexOf(meeting.host_id);
-                meetIndex = users[i].meetings.map(m => m.uuid).indexOf(meeting.uuid);
-                participants = users[i].meetings[meetIndex].participants;
+                const foundUser = await User.findById(meeting.host_id);
+                meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
+                participants = foundUser.userInfo.meetings[meetIndex].participants;
                 idx = participants.map(p => p.id).indexOf(person.id);
 
                 // If the participant's User ID is already found in the list of participants (i.e. the index >= 0)
@@ -363,13 +365,13 @@ app.post("/", async (req, res) => {
                     participants[idx].join_times.push(join_time);
                 }
                 // Else, if they aren't already in the list, it means they are a new participant, so add them to the data
-                // Also remove the attribute of "join_time" and basically replace it with a list of "join_times"
+                // Also remove the attribute of "join_time" and replace it with a list of "join_times"
                 else {
                     person.join_times = [join_time];
                     delete person.join_time;
                     participants.push(person);
+
                 }
-                updateDB();
                 break;
 
             case "meeting.participant_left":
@@ -395,13 +397,14 @@ app.post("/", async (req, res) => {
     }
 
     // function to create spreadsheet
-    async function createSheet(auth, msg, i, participants) {
+    async function createSheet(auth, msg, mongoID, participants) {
+        const foundUser = User.findById(mongoID);
         auth.setCredentials({
-            refresh_token: users[i].googleCreds.refresh_token
+            refresh_token: foundUser.userInfo.googleCreds.refresh_token
         });
         google.options({ auth });
         // create the spreadsheet
-        console.log("Create");
+        console.log("Creating spreadsheet");
         const createResponse = await sheets.spreadsheets.create({
             resource: {
                 properties: {
