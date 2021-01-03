@@ -12,6 +12,7 @@ const app = express()
 const https = require('https');
 const mongoose = require("mongoose");
 const util = require('util')
+const encrypt = require("mongoose-encryption");
 
 //google api
 const { google } = require("googleapis");
@@ -39,6 +40,8 @@ mongoose.connect("mongo://localhost:27017/attendifyDB", { useNewUrlParser: true 
 const userSchema = new mongoose.Schema({
     userInfo: Object
 });
+// encrypt the google credentials and zoom credentials
+userSchema.plugin(encrypt, { secret: process.env.ENCRYPTION_SECRET, encryptedFields: ["userInfo.googleCreds", "userInfo.zoomCreds"] });
 const stateSchema = new mongoose.Schema({
     state: String
 });
