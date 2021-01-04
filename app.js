@@ -425,8 +425,13 @@ app.post("/", async (req, res) => {
 
     // function to create drive folder
     async function createFolder(auth, title, mongoID) {
+        auth.setCredentials({
+            refresh_token: foundUser.userInfo.googleCreds.refresh_token
+        });
+        const foundUser = await User.findOne( { userId : mongoID } );
+        google.options({ auth });
         let fileMetadata = {
-            'name': 'title,
+            'name': title,
             'mimeType': 'application/vnd.google-apps.folder'
         };
         drive.files.create({
@@ -438,7 +443,6 @@ app.post("/", async (req, res) => {
                 console.log(err);
             } else {
                 console.log('Folder Id: ', folder.id);
-                const foundUser = await User.findOne( { userId : mongoId} );
                 foundUser.userInfo.folderId = folder.id;
                 foundUser.markModified("userInfo");
                 foundUser.save();
@@ -511,7 +515,6 @@ app.post("/", async (req, res) => {
         }
         const createResponse = await sheets.spreadsheets.create({
             resource: {
-                parents: [folderId],
                 properties: {
                     title: `Attendance ${msg}` // title of spreadsheet
                 },
@@ -527,6 +530,11 @@ app.post("/", async (req, res) => {
                     }
                 ]
             }
+        });
+        await drive.files.update({
+            fileId: createResponse.data.id,
+            addParents: folderId,
+            fields: 'id, parents'
         });
         let relevantData = participants.map(p => {
             let join_times_sheet = "";
