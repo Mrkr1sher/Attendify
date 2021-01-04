@@ -264,7 +264,7 @@ app.get("/oauth2callback", async (req, res) => {
                     }
                     // otherwise, made new user
                     const newUser = new User({
-                        _id: user.id,
+                        userId: user.id,
                         userInfo: user
                     })
                     await newUser.save();
