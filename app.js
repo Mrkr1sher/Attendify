@@ -12,6 +12,7 @@ const app = express()
 const https = require('https');
 const mongoose = require("mongoose");
 const encrypt = require("mongoose-encryption");
+const async = require("async");
 
 //google api
 const { google } = require("googleapis");
@@ -35,7 +36,7 @@ let users = [];
 
 app.use(express.json());
 
-mongoose.connect("mongodb+srv://attendify-admin:Atar1_1977_release@cluster0.qvdzj.mongodb.net/usersDB", { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
+mongoose.connect("mongodb://localhost:27017/attendifyDB", { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
 
 const userSchema = new mongoose.Schema({
     userId: String,
@@ -422,6 +423,30 @@ app.post("/", async (req, res) => {
         }
     }
 
+    // function to create drive folder
+    async function createFolder(auth, title, mongoID) {
+        let fileMetadata = {
+            'name': 'title,
+            'mimeType': 'application/vnd.google-apps.folder'
+        };
+        drive.files.create({
+            resource: fileMetadata,
+            fields: 'id'
+        }, async (err, folder) => {
+            if (err) {
+                // Handle error
+                console.log(err);
+            } else {
+                console.log('Folder Id: ', folder.id);
+                const foundUser = await User.findOne( { userId : mongoId} );
+                foundUser.userInfo.folderId = folder.id;
+                foundUser.markModified("userInfo");
+                foundUser.save();
+                return folder;
+            }
+        });
+    }
+
     // function to create spreadsheet
     async function createSheet(auth, msg, mongoID, participants) {
         const foundUser = await User.findOne( { userId : mongoID } );
@@ -431,8 +456,62 @@ app.post("/", async (req, res) => {
         google.options({ auth });
         // create the spreadsheet
         console.log("Creating spreadsheet");
+        let folderId;
+        // before creating folder, check if folder exists
+        if (foundUser.userInfo.folderId) {
+            // check to see if folder exists
+            let pageToken = null;
+// Using the NPM module 'async'
+            let foundFolder = false;
+            async.doWhilst(function (callback) {
+                drive.files.list({
+                    q: "mimeType='application/vnd.google-apps.folder'",
+                    fields: 'nextPageToken, files(id, name)',
+                    spaces: 'drive',
+                    pageToken: pageToken
+                }, function (err, res) {
+                    if (err) {
+                        // Handle error
+                        console.log(err);
+                        callback(err)
+                    } else {
+                        // res.files.forEach(function (folder) {
+                        //     console.log('Found file: ', folder.name, folder.id);
+                        // });
+                        for (let folder of res.files) {
+                            console.log('Found file: ', folder.name, folder.id);
+                            if (foundUser.userInfo.folderId === folder.id) {
+                                foundFolder = true;
+                                break;
+                            }
+                        }
+                        pageToken = res.nextPageToken;
+                        callback();
+                    }
+                });
+            }, function () {
+                return !!pageToken;
+            }, async function (err) {
+                if (err) {
+                    // Handle error
+                    console.log(err);
+                } else {
+                    // All pages fetched
+                    if (!foundFolder) {
+                        console.log("Folder not found, creating folder...");
+                        folderId = await createFolder(auth, "Attendify", mongoID).id;
+                    }
+                    else {
+                        folderId = foundUser.userInfo.folderId;
+                    }
+                }
+            })
+        } else {
+            folderId = await createFolder(auth, "Attendify", mongoID).id;
+        }
         const createResponse = await sheets.spreadsheets.create({
             resource: {
+                parents: [folderId],
                 properties: {
                     title: `Attendance ${msg}` // title of spreadsheet
                 },
