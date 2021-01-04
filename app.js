@@ -11,7 +11,6 @@ const express = require("express")
 const app = express()
 const https = require('https');
 const mongoose = require("mongoose");
-const util = require('util')
 const encrypt = require("mongoose-encryption");
 
 //google api
@@ -35,11 +34,13 @@ let users = [];
 
 app.use(express.json());
 
-mongoose.connect("mongo://localhost:27017/attendifyDB", { useNewUrlParser: true });
+mongoose.connect("mongo://localhost:27017/attendifyDB", { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
 
 const userSchema = new mongoose.Schema({
+    userId: String,
     userInfo: Object
 });
+
 // encrypt the google credentials and zoom credentials
 userSchema.plugin(encrypt, { secret: process.env.ENCRYPTION_SECRET, encryptedFields: ["userInfo.googleCreds", "userInfo.zoomCreds"] });
 const stateSchema = new mongoose.Schema({
@@ -86,7 +87,7 @@ users: [{
 //Email function
 async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoID) {
     // giving refresh token to auth scheme
-    const foundUser = await User.findById(mongoID).exec();
+    const foundUser = await User.findOne({ userId : mongoID }).exec();
     auth.setCredentials({
         refresh_token: foundUser.userInfo.googleCreds.refresh_token
     });
@@ -164,7 +165,7 @@ app.get("/", (req, res) => { //authorizing them
                                 access_token: tokenData.access_token
                             }
                         };
-                        const foundUser = await User.findById(user.id).exec();
+                        const foundUser = await User.findOne({ userId : user.id }).exec();
                         if (foundUser) {
                             res.end("You have already verified with Zoom.")
                             return;
@@ -204,7 +205,7 @@ app.post("/zoomdeauth", async (req, res) => {
     if (req.headers.authorization === process.env.zoomVerificationToken) {
         console.log(req.body);
         // check to see if the user exists in the DB
-        const foundUser = await User.findById(req.body.payload.user_id).exec();
+        const foundUser = await User.findOne({ userId : req.body.payload.user_id }).exec();
         // if they don't exist, then end the callback
         if (!foundUser) {
             return;
@@ -308,7 +309,7 @@ app.post("/", async (req, res) => {
                 console.log(`${meeting.topic} started at time ${zone(meeting.start_time)[1]}`);
                 meeting.participants = [];
                 // Add this meeting to the array of meetings in this user document
-                User.findByIdAndUpdate(meeting.host_id, {$push: {"userInfo.meetings": meeting}}, null, (err) => {
+                User.findOneAndUpdate({ userId : meeting.host_id }, {$push: {"userInfo.meetings": meeting}}, null, (err) => {
                     if (err) console.log(err);
                 });
                 break;
@@ -316,9 +317,7 @@ app.post("/", async (req, res) => {
                 let end = zone(meeting.end_time);
                 let start = zone(meeting.start_time);
                 console.log(`${meeting.topic} ended at time ${end[1]}`);
-
-                i = users.map(u => u.id).indexOf(meeting.host_id);
-                foundUser = await User.findById(meeting.host_id).exec();
+                foundUser = await User.findOne( { userId : meeting.host_id } ).exec();
                 meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
                 participants = foundUser.userInfo.meetings[meetIndex].participants;
 
@@ -353,7 +352,7 @@ app.post("/", async (req, res) => {
                 let join_time = zone(person.join_time);
                 console.log(`${person.user_name} joined ${meeting.topic} at time ${join_time[1]}`);
                 // getting the user
-                foundUser = await User.findById(meeting.host_id).exec();
+                foundUser = await User.findOne({ userId : meeting.host_id }).exec();
                 meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
                 participants = foundUser.userInfo.meetings[meetIndex].participants;
                 idx = foundUser.userInfo.meetings[meetIndex].participants.map(p => p.id).indexOf(person.id);
@@ -379,7 +378,7 @@ app.post("/", async (req, res) => {
                 let leave_time = zone(person.leave_time);
                 console.log(`${person.user_name} left ${meeting.topic} at time ${leave_time[1]}`);
                 // find User in DB
-                foundUser = await User.findById(meeting.host_id);
+                foundUser = await User.findOne( { userId : meeting.host_id } );
                 meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
                 if (meetIndex < 0)
                     break;
@@ -398,7 +397,7 @@ app.post("/", async (req, res) => {
 
     // function to create spreadsheet
     async function createSheet(auth, msg, mongoID, participants) {
-        const foundUser = User.findById(mongoID);
+        const foundUser = User.findOne( { userId : mongoID } );
         auth.setCredentials({
             refresh_token: foundUser.userInfo.googleCreds.refresh_token
         });
