@@ -15,6 +15,7 @@ const encrypt = require("mongoose-encryption");
 
 //google api
 const { google } = require("googleapis");
+const drive = google.drive('v3')
 const sheets = google.sheets('v4');
 const gmail = google.gmail('v1');
 const oauth2Client = new google.auth.OAuth2(
@@ -34,7 +35,7 @@ let users = [];
 
 app.use(express.json());
 
-mongoose.connect("mongo://localhost:27017/attendifyDB", { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
+mongoose.connect("mongodb+srv://attendify-admin:Atar1_1977_release@cluster0.qvdzj.mongodb.net/usersDB", { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
 
 const userSchema = new mongoose.Schema({
     userId: String,
@@ -229,12 +230,23 @@ app.post("/zoomdeauth", async (req, res) => {
 
 app.get("/oauth2callback", async (req, res) => {
     if (req.query.code && req.query.state) {
+
         // check if state is a valid one
         const foundState = await State.findOne({ state : req.query.state });
         if (!foundState) {
             res.send("Malformed state.")
             return;
         }
+
+        let requiredScopes = ["email", "profile", "openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/gmail.compose"]
+
+        for (let scope of requiredScopes) {
+            if (!req.query.scope.includes(scope)) {
+                res.send("Required Scopes Not Authorized. Please reinstall with all scopes allowed.")
+                return;
+            }
+        }
+
         // if state was previously there, delete it from the States collection
         await State.deleteOne({ state : req.query.state });
         // get state variable and turn it into a JS object which is a user
@@ -251,23 +263,29 @@ app.get("/oauth2callback", async (req, res) => {
             console.info('Tokens acquired.');
             https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${r.tokens.access_token}`, (resp) => {
                 resp.on('data', async d => {
+                    // console.log("254");
                     d = JSON.parse(d);
                     console.log(d);
+                    // console.log("257");
                     user.gmail = d.email;
                     user.name = d.name;
                     // look for any user in DB that has the same gmail as this person
-                    const foundUser = await User.findOne({"userInfo.gmail": user.gmail});
-                    if (!foundUser) {
+                    const foundUser = await User.findOne({ "userInfo.gmail": user.gmail });
+                    // console.log("262");
+                    if (foundUser) {
                         // if found, then kill this auth flow
                         res.send("You have already authorized this Google account to be used with Attendify.");
                         return;
                     }
+                    // console.log("268");
                     // otherwise, made new user
                     const newUser = new User({
                         userId: user.id,
                         userInfo: user
                     })
+                    // console.log("274");
                     await newUser.save();
+                    // console.log("276");
                     await sendEmail(
                         oauth2Client,
                         `Attendify Authorized`,
@@ -277,6 +295,7 @@ app.get("/oauth2callback", async (req, res) => {
                             a spreadsheet with meeting attendance for all future meetings.`,
                         user.id
                     );
+                    // console.log("286");
                     res.send("Authorized with Google!");
                 });
             });
@@ -308,10 +327,10 @@ app.post("/", async (req, res) => {
             case "meeting.started":
                 console.log(`${meeting.topic} started at time ${zone(meeting.start_time)[1]}`);
                 meeting.participants = [];
-                foundUser = await User.findOne({ userId : meeting.host_id});
                 // Add this meeting to the array of meetings in this user document
-                foundUser.userInfo.meetings.push(meeting);
-                await foundUser.save();
+                User.findOneAndUpdate({ userId: meeting.host_id }, { $push: { "userInfo.meetings": meeting } }, null, (err) => {
+                    if (err) console.log(err);
+                });
                 break;
             case "meeting.ended":
                 let end = zone(meeting.end_time);
@@ -330,20 +349,21 @@ app.post("/", async (req, res) => {
                 let sheetTitle = `${meeting.topic} ${date} ${start[1]} - ${end[1]}`;
 
                 // This is the part where we have to create a spreadsheet and place it in user's drive.
-                const url = await createSheet(oauth2Client, sheetTitle, foundUser._id, participants)
+                const url = await createSheet(oauth2Client, sheetTitle, foundUser.userId, participants)
                 await sendEmail(
                     oauth2Client,
                     `Spreadsheet created: ${meeting.topic}`,
                     foundUser.userInfo.gmail,
                     foundUser.userInfo.gmail,
                     `Your spreadsheet has been created at ${url}. Be sure to check it out!`,
-                    foundUser._id
+                    foundUser.userId
                 )
                 fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
                     if (err) throw err;
                     console.log("Updated!");
                 });
                 delete foundUser.userInfo.meetings[meetIndex];
+                foundUser.markModified("userInfo");
                 foundUser.save();
                 break;
 
@@ -361,15 +381,21 @@ app.post("/", async (req, res) => {
                 // Then just access their data and add on their join time
                 if (idx >= 0) {
                     foundUser.userInfo.meetings[meetIndex].participants[idx].join_times.push(join_time);
+                    foundUser.markModified("userInfo");
                     await foundUser.save();
                 }
-                // Else, if they aren't already in the list, it means they are a new participant, so add them to the data
+                    // Else, if they aren't already in the list, it means they are a new participant, so add them to the data
                 // Also remove the attribute of "join_time" and replace it with a list of "join_times"
                 else {
                     person.join_times = [join_time];
                     delete person.join_time;
                     foundUser.userInfo.meetings[meetIndex].participants.push(person);
+                    foundUser.markModified("userInfo");
                     await foundUser.save();
+
+                    // User.findOneAndUpdate({ userId: meeting.host_id }, { $push: { "userInfo.meetings[meetIndex].participants": person } }, null, (err) => {
+                    //     if (err) console.log(err);
+                    // });
                 }
                 break;
 
@@ -390,6 +416,7 @@ app.post("/", async (req, res) => {
                     foundUser.userInfo.meetings[meetIndex].participants[idx].leave_times = [];
                 // Add on the current leave time to the person's list of leave times
                 foundUser.userInfo.meetings[meetIndex].participants[idx].leave_times.push(leave_time);
+                foundUser.markModified("userInfo");
                 foundUser.save();
                 break;
         }
@@ -397,7 +424,7 @@ app.post("/", async (req, res) => {
 
     // function to create spreadsheet
     async function createSheet(auth, msg, mongoID, participants) {
-        const foundUser = User.findOne( { userId : mongoID } );
+        const foundUser = await User.findOne( { userId : mongoID } );
         auth.setCredentials({
             refresh_token: foundUser.userInfo.googleCreds.refresh_token
         });
@@ -465,8 +492,8 @@ app.post("/", async (req, res) => {
                 }
                 attended += new Date(leaves[i]) - new Date(joins[i]);
             }
-            // Set the value of the percent 
-            p.percent_attended = attended * 100 / (new Date(etime) - new Date(stime));
+            // Set the value of the percent
+            p.percent_attended = Math.min(attended * 100 / (new Date(etime) - new Date(stime)), 100);
         }
     }
     function zone(str) {
