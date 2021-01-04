@@ -83,7 +83,7 @@ users: [{
 
 
 
-//incomplete email function
+//Email function
 async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoID) {
     // giving refresh token to auth scheme
     const foundUser = await User.findById(mongoID).exec();
@@ -339,13 +339,13 @@ app.post("/", async (req, res) => {
                     foundUser.userInfo.gmail,
                     `Your spreadsheet has been created at ${url}. Be sure to check it out!`,
                     foundUser._id
-                ).then(() => {
-                    fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
-                        if (err) throw err;
-                        console.log("Updated!");
-                    });
-                    delete users[i].meetings[meetIndex];
-                })
+                )
+                fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
+                    if (err) throw err;
+                    console.log("Updated!");
+                });
+                delete foundUser.userInfo.meetings[meetIndex];
+                foundUser.save();
                 break;
 
             case "meeting.participant_joined":
