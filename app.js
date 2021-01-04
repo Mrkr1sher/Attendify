@@ -398,16 +398,16 @@ app.post("/", async (req, res) => {
         drive.files.create({
             resource: fileMetadata,
             fields: 'id'
-        }, async (err, file) => {
+        }, async (err, folder) => {
             if (err) {
                 // Handle error
                 console.log(err);
             } else {
-                console.log('Folder Id: ', file.data.id);
-                foundUser.userInfo.folderId = file.data.id;
+                console.log('Folder Id: ', folder.data.id);
+                foundUser.userInfo.folderId = folder.data.id;
                 foundUser.markModified("userInfo");
                 await foundUser.save();
-                return file;
+                return folder;
             }
         });
     }
@@ -443,9 +443,10 @@ app.post("/", async (req, res) => {
                         // res.files.forEach(function (folder) {
                         //     console.log('Found file: ', folder.name, folder.id);
                         // });
-                        for (let folder of res.files) {
-                            console.log('Found file: ', folder.name, folder.data.id);
-                            if (foundUser.userInfo.data.folderId === folder.data.id) {
+                        console.log("Files " + JSON.stringify(res))
+                        for (let folder of res.data.files) {
+                            console.log('Found file: ', folder.name, folder.id);
+                            if (foundUser.userInfo.folderId === folder.id) {
                                 foundFolder = true;
                                 break;
                             }
@@ -464,7 +465,7 @@ app.post("/", async (req, res) => {
                     // All pages fetched
                     if (!foundFolder) {
                         console.log("Folder not found, creating folder...");
-                        folderId = await createFolder(auth, "Attendify", mongoID).data.id;
+                        folderId = await createFolder(auth, "Attendify", mongoID).id;
                     }
                     else {
                         folderId = foundUser.userInfo.folderId;
