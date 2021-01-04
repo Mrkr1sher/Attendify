@@ -36,7 +36,7 @@ let users = [];
 
 app.use(express.json());
 
-mongoose.connect("mongodb://localhost:27017/attendifyDB", { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
+mongoose.connect("mongodb+srv://attendify-admin:Atar1_1977_release@cluster0.qvdzj.mongodb.net/usersDB", { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
 
 const userSchema = new mongoose.Schema({
     userId: String,
@@ -51,40 +51,6 @@ const stateSchema = new mongoose.Schema({
 
 const User = mongoose.model("USER", userSchema);
 const State = mongoose.model("STATE", stateSchema);
-
-// person.anything = { x: [3, 4, { y: "changed" }] };
-// person.markModified('anything');
-// person.save(); // Mongoose will save changes to `anything`.
-/*
-users: [{
-        meetings: [{
-            duration: Number,
-            startTime: String,
-            timezone: String,
-            topic: String,
-            id: String,
-            type: Number,
-            uuid: String,
-            hostID: String,
-            participants: Object,
-            endTime: String,
-        }],
-        zoomCreds: {
-            refreshToken: String,
-            accessToken: String
-        },
-        googleCreds: {
-            tokenType: String,
-            expiryDate: Number,
-            refreshToken: String,
-            accessToken: String,
-            scope: String
-        },
-        gmail: String,
-        name: String
-    }]*/
-
-
 
 //Email function
 async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoID) {
