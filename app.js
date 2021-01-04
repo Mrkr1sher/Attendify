@@ -324,6 +324,7 @@ app.post("/", async (req, res) => {
                     console.log("Updated!");
                 });
                 //await User.findOneAndUpdate({userId : meeting.host_id}, { $pull: { "userInfo.meetings": {$elemMatch: {id:meeting.uuid} }}});
+                foundUser.userInfo.meetings.splice(meetIndex, 1)
                 foundUser.markModified("userInfo");
                 await foundUser.save();
                 break;
