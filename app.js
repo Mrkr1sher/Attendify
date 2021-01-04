@@ -331,12 +331,12 @@ app.post("/", async (req, res) => {
                 let sheetTitle = `${meeting.topic} ${date} ${start[1]} - ${end[1]}`;
 
                 // This is the part where we have to create a spreadsheet and place it in user's drive.
-                const url = await createSheet(oauth2Client, sheetTitle, i, participants)
+                const url = await createSheet(oauth2Client, sheetTitle, foundUser._id, participants)
                 await sendEmail(
                     oauth2Client,
                     `Spreadsheet created: ${meeting.topic}`,
-                    users[i].gmail,
-                    users[i].gmail,
+                    foundUser.userInfo.gmail,
+                    foundUser.userInfo.gmail,
                     `Your spreadsheet has been created at ${url}. Be sure to check it out!`,
                     foundUser._id
                 ).then(() => {
@@ -344,7 +344,6 @@ app.post("/", async (req, res) => {
                         if (err) throw err;
                         console.log("Updated!");
                     });
-                    updateDB();
                     delete users[i].meetings[meetIndex];
                 })
                 break;
