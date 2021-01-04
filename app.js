@@ -498,7 +498,7 @@ app.post("/", async (req, res) => {
             }
         });
         await drive.files.update({
-            fileId: createResponse.data.id,
+            fileId: createResponse.data.spreadsheetId,
             addParents: folderId,
             removeParents: "root"
         });
