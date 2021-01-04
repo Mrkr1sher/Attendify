@@ -292,7 +292,7 @@ app.post("/", async (req, res) => {
         console.log(`Webhook Error: ${err.message}`);
         res.send("Failed.")
     }
-    res.status(200).end();
+    res.status(200).send();
     // Check to see if you received the event or not.
     if (req.headers.authorization === process.env.zoomVerificationToken) {
         let meeting = webhook.payload.object;
@@ -301,13 +301,14 @@ app.post("/", async (req, res) => {
         let meetIndex;
         let participants;
         let idx;
+        let foundUser;
 
         switch (webhook.event) {
             case "meeting.started":
                 console.log(`${meeting.topic} started at time ${zone(meeting.start_time)[1]}`);
                 meeting.participants = [];
                 // Add this meeting to the array of meetings in this user document
-                User.findByIdAndUpdate(meeting.host_id, {push: {"userInfo.meetings": meeting}}, null, (err, doc) => {
+                User.findByIdAndUpdate(meeting.host_id, {$push: {"userInfo.meetings": meeting}}, null, (err) => {
                     if (err) console.log(err);
                 });
                 break;
@@ -317,11 +318,12 @@ app.post("/", async (req, res) => {
                 console.log(`${meeting.topic} ended at time ${end[1]}`);
 
                 i = users.map(u => u.id).indexOf(meeting.host_id);
-                meetIndex = users[i].meetings.map(m => m.uuid).indexOf(meeting.uuid);
-                participants = users[i].meetings[meetIndex].participants;
+                foundUser = await User.findById(meeting.host_id).exec();
+                meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
+                participants = foundUser.userInfo.meetings[meetIndex].participants;
 
                 // Find the meeting's end time through the user's data
-                users[i].meetings[meetIndex].end_time = end[1];
+                foundUser.userInfo.meetings[meetIndex].end_time = end[1];
 
                 calculatePercent(participants, start, end);
 
@@ -329,23 +331,22 @@ app.post("/", async (req, res) => {
                 let sheetTitle = `${meeting.topic} ${date} ${start[1]} - ${end[1]}`;
 
                 // This is the part where we have to create a spreadsheet and place it in user's drive.
-                await createSheet(oauth2Client, sheetTitle, i, participants).then(async url => {
-                    await sendEmail(
-                        oauth2Client,
-                        `Spreadsheet created: ${meeting.topic}`,
-                        users[i].gmail,
-                        users[i].gmail,
-                        `Your spreadsheet has been created at ${url}. Be sure to check it out!`,
-                        i
-                    ).then(() => {
-                        fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
-                            if (err) throw err;
-                            console.log("Updated!");
-                        });
-                        updateDB();
-                        delete users[i].meetings[meetIndex];
-                    })
-                });
+                const url = await createSheet(oauth2Client, sheetTitle, i, participants)
+                await sendEmail(
+                    oauth2Client,
+                    `Spreadsheet created: ${meeting.topic}`,
+                    users[i].gmail,
+                    users[i].gmail,
+                    `Your spreadsheet has been created at ${url}. Be sure to check it out!`,
+                    foundUser._id
+                ).then(() => {
+                    fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
+                        if (err) throw err;
+                        console.log("Updated!");
+                    });
+                    updateDB();
+                    delete users[i].meetings[meetIndex];
+                })
                 break;
 
             case "meeting.participant_joined":
@@ -353,24 +354,24 @@ app.post("/", async (req, res) => {
                 let join_time = zone(person.join_time);
                 console.log(`${person.user_name} joined ${meeting.topic} at time ${join_time[1]}`);
                 // getting the user
-                i = users.map(u => u.id).indexOf(meeting.host_id);
-                const foundUser = await User.findById(meeting.host_id);
+                foundUser = await User.findById(meeting.host_id).exec();
                 meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
                 participants = foundUser.userInfo.meetings[meetIndex].participants;
-                idx = participants.map(p => p.id).indexOf(person.id);
+                idx = foundUser.userInfo.meetings[meetIndex].participants.map(p => p.id).indexOf(person.id);
 
                 // If the participant's User ID is already found in the list of participants (i.e. the index >= 0)
                 // Then just access their data and add on their join time
                 if (idx >= 0) {
-                    participants[idx].join_times.push(join_time);
+                    foundUser.userInfo.meetings[meetIndex].participants[idx].join_times.push(join_time);
+                    await foundUser.save();
                 }
                 // Else, if they aren't already in the list, it means they are a new participant, so add them to the data
                 // Also remove the attribute of "join_time" and replace it with a list of "join_times"
                 else {
                     person.join_times = [join_time];
                     delete person.join_time;
-                    participants.push(person);
-
+                    foundUser.userInfo.meetings[meetIndex].participants.push(person);
+                    await foundUser.save();
                 }
                 break;
 
@@ -378,20 +379,20 @@ app.post("/", async (req, res) => {
                 person = meeting.participant;
                 let leave_time = zone(person.leave_time);
                 console.log(`${person.user_name} left ${meeting.topic} at time ${leave_time[1]}`);
-
-                i = users.map(u => u.id).indexOf(meeting.host_id);
-                meetIndex = users[i].meetings.map(m => m.uuid).indexOf(meeting.uuid);
+                // find User in DB
+                foundUser = await User.findById(meeting.host_id);
+                meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
                 if (meetIndex < 0)
                     break;
-                participants = users[i].meetings[meetIndex].participants;
-                idx = participants.map(p => p.id).indexOf(person.id);
+                participants = foundUser.userInfo.meetings[meetIndex].participants;
+                idx = foundUser.userInfo.meetings[meetIndex].participants.map(p => p.id).indexOf(person.id);
 
                 // If the list of leave times for that participant does not exist, create it
-                if (!participants[idx].leave_times)
-                    participants[idx].leave_times = [];
+                if (!foundUser.userInfo.meetings[meetIndex].participants[idx].leave_times)
+                    foundUser.userInfo.meetings[meetIndex].participants[idx].leave_times = [];
                 // Add on the current leave time to the person's list of leave times
-                participants[idx].leave_times.push(leave_time);
-                updateDB();
+                foundUser.userInfo.meetings[meetIndex].participants[idx].leave_times.push(leave_time);
+                foundUser.save();
                 break;
         }
     }
