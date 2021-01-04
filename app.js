@@ -15,6 +15,7 @@ const encrypt = require("mongoose-encryption");
 
 //google api
 const { google } = require("googleapis");
+const drive = google.drive('v3')
 const sheets = google.sheets('v4');
 const gmail = google.gmail('v1');
 const oauth2Client = new google.auth.OAuth2(
@@ -229,12 +230,23 @@ app.post("/zoomdeauth", async (req, res) => {
 
 app.get("/oauth2callback", async (req, res) => {
     if (req.query.code && req.query.state) {
+
         // check if state is a valid one
         const foundState = await State.findOne({ state : req.query.state });
         if (!foundState) {
             res.send("Malformed state.")
             return;
         }
+
+        let requiredScopes = ["email", "profile", "openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/gmail.compose"]
+        
+        for (let scope of requiredScopes) {
+            if (!req.query.scope.includes(scope)) {
+                res.send("Required Scopes Not Authorized. Please reinstall with all scopes allowed.")
+                return;
+            }
+        }
+
         // if state was previously there, delete it from the States collection
         await State.deleteOne({ state : req.query.state });
         // get state variable and turn it into a JS object which is a user
