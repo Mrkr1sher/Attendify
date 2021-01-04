@@ -500,7 +500,7 @@ app.post("/", async (req, res) => {
         await drive.files.update({
             fileId: createResponse.data.id,
             addParents: folderId,
-            fields: 'id, parents'
+            removeParents: "root"
         });
         let relevantData = participants.map(p => {
             let join_times_sheet = "";
