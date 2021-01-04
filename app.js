@@ -308,10 +308,10 @@ app.post("/", async (req, res) => {
             case "meeting.started":
                 console.log(`${meeting.topic} started at time ${zone(meeting.start_time)[1]}`);
                 meeting.participants = [];
+                foundUser = await User.findOne({ userId : meeting.host_id});
                 // Add this meeting to the array of meetings in this user document
-                User.findOneAndUpdate({ userId : meeting.host_id }, {$push: {"userInfo.meetings": meeting}}, null, (err) => {
-                    if (err) console.log(err);
-                });
+                foundUser.userInfo.meetings.push(meeting);
+                await foundUser.save();
                 break;
             case "meeting.ended":
                 let end = zone(meeting.end_time);
