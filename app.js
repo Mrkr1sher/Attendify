@@ -36,7 +36,7 @@ let users = [];
 
 app.use(express.json());
 
-mongoose.connect("mongodb+srv://attendify-admin:Atar1_1977_release@cluster0.qvdzj.mongodb.net/usersDB", { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
+mongoose.connect(process.env.MONGODB, { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
 
 const userSchema = new mongoose.Schema({
     userId: String,
@@ -182,10 +182,10 @@ app.post("/zoomdeauth", async (req, res) => {
             "Attendify Deauthorized", foundUser.userInfo.gmail, foundUser.userInfo.gmail,
             "You have successfully deauthorized Attendify. Please be sure to remove Attendify's access to your Google account by " +
             "visiting https://myaccount.google.com/permissions.",
-            foundUser._id)
+            foundUser.userId)
         console.log(`Deleted user ${foundUser.userInfo.name} from memory.`);
         // delete user from DB
-        await User.deleteOne( { _id : foundUser._id});
+        await User.deleteOne( { userId : foundUser.userId });
         const allUsers = await User.find({}).exec();
         fs.writeFile("current-users.json", JSON.stringify(allUsers, null, 2), (err) => {
             if (err) throw err;
@@ -230,29 +230,23 @@ app.get("/oauth2callback", async (req, res) => {
             console.info('Tokens acquired.');
             https.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${r.tokens.access_token}`, (resp) => {
                 resp.on('data', async d => {
-                    // console.log("254");
                     d = JSON.parse(d);
                     console.log(d);
-                    // console.log("257");
                     user.gmail = d.email;
                     user.name = d.name;
                     // look for any user in DB that has the same gmail as this person
                     const foundUser = await User.findOne({ "userInfo.gmail": user.gmail });
-                    // console.log("262");
                     if (foundUser) {
                         // if found, then kill this auth flow
                         res.send("You have already authorized this Google account to be used with Attendify.");
                         return;
                     }
-                    // console.log("268");
                     // otherwise, made new user
                     const newUser = new User({
                         userId: user.id,
                         userInfo: user
                     })
-                    // console.log("274");
                     await newUser.save();
-                    // console.log("276");
                     await sendEmail(
                         oauth2Client,
                         `Attendify Authorized`,
@@ -329,9 +323,9 @@ app.post("/", async (req, res) => {
                     if (err) throw err;
                     console.log("Updated!");
                 });
-                delete foundUser.userInfo.meetings[meetIndex];
+                //await User.findOneAndUpdate({userId : meeting.host_id}, { $pull: { "userInfo.meetings": {$elemMatch: {id:meeting.uuid} }}});
                 foundUser.markModified("userInfo");
-                foundUser.save();
+                await foundUser.save();
                 break;
 
             case "meeting.participant_joined":
@@ -384,17 +378,17 @@ app.post("/", async (req, res) => {
                 // Add on the current leave time to the person's list of leave times
                 foundUser.userInfo.meetings[meetIndex].participants[idx].leave_times.push(leave_time);
                 foundUser.markModified("userInfo");
-                foundUser.save();
+                await foundUser.save();
                 break;
         }
     }
 
     // function to create drive folder
     async function createFolder(auth, title, mongoID) {
+        const foundUser = await User.findOne( { userId : mongoID } );
         auth.setCredentials({
             refresh_token: foundUser.userInfo.googleCreds.refresh_token
         });
-        const foundUser = await User.findOne( { userId : mongoID } );
         google.options({ auth });
         let fileMetadata = {
             'name': title,
@@ -403,16 +397,16 @@ app.post("/", async (req, res) => {
         drive.files.create({
             resource: fileMetadata,
             fields: 'id'
-        }, async (err, folder) => {
+        }, async (err, file) => {
             if (err) {
                 // Handle error
                 console.log(err);
             } else {
-                console.log('Folder Id: ', folder.id);
-                foundUser.userInfo.folderId = folder.id;
+                console.log('Folder Id: ', file.data.id);
+                foundUser.userInfo.folderId = file.data.id;
                 foundUser.markModified("userInfo");
-                foundUser.save();
-                return folder;
+                await foundUser.save();
+                return file;
             }
         });
     }
@@ -449,8 +443,8 @@ app.post("/", async (req, res) => {
                         //     console.log('Found file: ', folder.name, folder.id);
                         // });
                         for (let folder of res.files) {
-                            console.log('Found file: ', folder.name, folder.id);
-                            if (foundUser.userInfo.folderId === folder.id) {
+                            console.log('Found file: ', folder.name, folder.data.id);
+                            if (foundUser.userInfo.data.folderId === folder.data.id) {
                                 foundFolder = true;
                                 break;
                             }
@@ -469,7 +463,7 @@ app.post("/", async (req, res) => {
                     // All pages fetched
                     if (!foundFolder) {
                         console.log("Folder not found, creating folder...");
-                        folderId = await createFolder(auth, "Attendify", mongoID).id;
+                        folderId = await createFolder(auth, "Attendify", mongoID).data.id;
                     }
                     else {
                         folderId = foundUser.userInfo.folderId;
