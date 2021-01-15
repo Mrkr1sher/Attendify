@@ -1,4 +1,4 @@
-if (typeof(PhusionPassenger) !== 'undefined') {
+if (typeof (PhusionPassenger) !== 'undefined') {
     PhusionPassenger.configure({ autoInstall: false });
 }
 
@@ -32,8 +32,6 @@ const scopes = [
     "https://www.googleapis.com/auth/drive.file",
 ];
 
-let users = [];
-
 app.use(express.json());
 
 mongoose.connect(process.env.MONGODB, { useUnifiedTopology: true, useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false });
@@ -55,7 +53,7 @@ const State = mongoose.model("STATE", stateSchema);
 //Email function
 async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoID) {
     // giving refresh token to auth scheme
-    const foundUser = await User.findOne({ userId : mongoID }).exec();
+    const foundUser = await User.findOne({ userId: mongoID }).exec();
     auth.setCredentials({
         refresh_token: foundUser.userInfo.googleCreds.refresh_token
     });
@@ -133,7 +131,7 @@ app.get("/", (req, res) => { //authorizing them
                                 access_token: tokenData.access_token
                             }
                         };
-                        const foundUser = await User.findOne({ userId : user.id }).exec();
+                        const foundUser = await User.findOne({ userId: user.id }).exec();
                         if (foundUser) {
                             res.end("You have already verified with Zoom.")
                             return;
@@ -173,7 +171,7 @@ app.post("/zoomdeauth", async (req, res) => {
     if (req.headers.authorization === process.env.zoomVerificationToken) {
         console.log(req.body);
         // check to see if the user exists in the DB
-        const foundUser = await User.findOne({ userId : req.body.payload.user_id }).exec();
+        const foundUser = await User.findOne({ userId: req.body.payload.user_id }).exec();
         // if they don't exist, then end the callback
         if (!foundUser) {
             return;
@@ -185,7 +183,7 @@ app.post("/zoomdeauth", async (req, res) => {
             foundUser.userId)
         console.log(`Deleted user ${foundUser.userInfo.name} from memory.`);
         // delete user from DB
-        await User.deleteOne( { userId : foundUser.userId });
+        await User.deleteOne({ userId: foundUser.userId });
         const allUsers = await User.find({}).exec();
         fs.writeFile("current-users.json", JSON.stringify(allUsers, null, 2), (err) => {
             if (err) throw err;
@@ -199,7 +197,7 @@ app.get("/oauth2callback", async (req, res) => {
     if (req.query.code && req.query.state) {
 
         // check if state is a valid one
-        const foundState = await State.findOne({ state : req.query.state });
+        const foundState = await State.findOne({ state: req.query.state });
         if (!foundState) {
             res.send("Malformed state.")
             return;
@@ -215,7 +213,7 @@ app.get("/oauth2callback", async (req, res) => {
         }
 
         // if state was previously there, delete it from the States collection
-        await State.deleteOne({ state : req.query.state });
+        await State.deleteOne({ state: req.query.state });
         // get state variable and turn it into a JS object which is a user
         let user = JSON.parse(req.query.state);
         let code = req.query.code;
@@ -297,7 +295,7 @@ app.post("/", async (req, res) => {
                 let end = zone(meeting.end_time);
                 let start = zone(meeting.start_time);
                 console.log(`${meeting.topic} ended at time ${end[1]}`);
-                foundUser = await User.findOne( { userId : meeting.host_id } ).exec();
+                foundUser = await User.findOne({ userId: meeting.host_id }).exec();
                 meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
                 participants = foundUser.userInfo.meetings[meetIndex].participants;
 
@@ -319,11 +317,11 @@ app.post("/", async (req, res) => {
                     `Your spreadsheet has been created at ${url}. Be sure to check it out!`,
                     foundUser.userId
                 )
-                fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
-                    if (err) throw err;
-                    console.log("Updated!");
-                });
-                //await User.findOneAndUpdate({userId : meeting.host_id}, { $pull: { "userInfo.meetings": {$elemMatch: {id:meeting.uuid} }}});
+                // fs.writeFile("current-users.json", JSON.stringify(users, null, 2), (err) => {
+                //     if (err) throw err;
+                //     console.log("Updated!");
+                // });
+                foundUser = await User.findOne({ userId: meeting.host_id }).exec();
                 foundUser.userInfo.meetings.splice(meetIndex, 1)
                 foundUser.markModified("userInfo");
                 await foundUser.save();
@@ -334,7 +332,7 @@ app.post("/", async (req, res) => {
                 let join_time = zone(person.join_time);
                 console.log(`${person.user_name} joined ${meeting.topic} at time ${join_time[1]}`);
                 // getting the user
-                foundUser = await User.findOne({ userId : meeting.host_id }).exec();
+                foundUser = await User.findOne({ userId: meeting.host_id }).exec();
                 meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
                 participants = foundUser.userInfo.meetings[meetIndex].participants;
                 idx = foundUser.userInfo.meetings[meetIndex].participants.map(p => p.id).indexOf(person.id);
@@ -346,7 +344,7 @@ app.post("/", async (req, res) => {
                     foundUser.markModified("userInfo");
                     await foundUser.save();
                 }
-                    // Else, if they aren't already in the list, it means they are a new participant, so add them to the data
+                // Else, if they aren't already in the list, it means they are a new participant, so add them to the data
                 // Also remove the attribute of "join_time" and replace it with a list of "join_times"
                 else {
                     person.join_times = [join_time];
@@ -366,7 +364,7 @@ app.post("/", async (req, res) => {
                 let leave_time = zone(person.leave_time);
                 console.log(`${person.user_name} left ${meeting.topic} at time ${leave_time[1]}`);
                 // find User in DB
-                foundUser = await User.findOne( { userId : meeting.host_id } );
+                foundUser = await User.findOne({ userId: meeting.host_id });
                 meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
                 if (meetIndex < 0)
                     break;
@@ -386,7 +384,8 @@ app.post("/", async (req, res) => {
 
     // function to create drive folder
     async function createFolder(auth, title, mongoID) {
-        const foundUser = await User.findOne( { userId : mongoID } );
+        const foundUser = await User.findOne({ userId: mongoID });
+
         auth.setCredentials({
             refresh_token: foundUser.userInfo.googleCreds.refresh_token
         });
@@ -400,13 +399,14 @@ app.post("/", async (req, res) => {
             fields: 'id'
         }, async (err, folder) => {
             if (err) {
-                // Handle error
                 console.log(err);
             } else {
                 console.log('Folder Id: ', folder.data.id);
                 foundUser.userInfo.folderId = folder.data.id;
                 foundUser.markModified("userInfo");
+
                 await foundUser.save();
+
                 return folder;
             }
         });
@@ -414,7 +414,7 @@ app.post("/", async (req, res) => {
 
     // function to create spreadsheet
     async function createSheet(auth, msg, mongoID, participants) {
-        const foundUser = await User.findOne( { userId : mongoID } );
+        let foundUser = await User.findOne({ userId: mongoID });
         auth.setCredentials({
             refresh_token: foundUser.userInfo.googleCreds.refresh_token
         });
@@ -423,58 +423,57 @@ app.post("/", async (req, res) => {
         console.log("Creating spreadsheet");
         let folderId;
         // before creating folder, check if folder exists
-        if (foundUser.userInfo.folderId) {
-            // check to see if folder exists
-            let pageToken = null;
-// Using the NPM module 'async'
-            let foundFolder = false;
-            async.doWhilst(function (callback) {
-                drive.files.list({
-                    q: "mimeType='application/vnd.google-apps.folder'",
-                    fields: 'nextPageToken, files(id, name)',
-                    spaces: 'drive',
-                    pageToken: pageToken
-                }, function (err, res) {
-                    if (err) {
-                        // Handle error
-                        console.log(err);
-                        callback(err)
-                    } else {
-                        // res.files.forEach(function (folder) {
-                        //     console.log('Found file: ', folder.name, folder.id);
-                        // });
-                        console.log("Files " + JSON.stringify(res))
-                        for (let folder of res.data.files) {
-                            console.log('Found file: ', folder.name, folder.id);
-                            if (foundUser.userInfo.folderId === folder.id) {
-                                foundFolder = true;
-                                break;
-                            }
-                        }
-                        pageToken = res.nextPageToken;
-                        callback();
-                    }
-                });
-            }, function () {
-                return !!pageToken;
-            }, async function (err) {
+        if (!foundUser.userInfo.folderId) {
+            await createFolder(auth, "Attendify", mongoID);
+        }
+        folderId = foundUser.userInfo.folderId;
+        let pageToken = null;
+        // Using the NPM module 'async'
+        async.doWhilst(function (callback) {
+            drive.files.list({
+                q: "mimeType='application/vnd.google-apps.folder'",
+                fields: 'nextPageToken, files(id, name)',
+                spaces: 'drive',
+                pageToken: pageToken
+            }, function (err, res) {
                 if (err) {
                     // Handle error
                     console.log(err);
+                    callback(err)
                 } else {
-                    // All pages fetched
-                    if (!foundFolder) {
-                        console.log("Folder not found, creating folder...");
-                        folderId = await createFolder(auth, "Attendify", mongoID).id;
-                    }
-                    else {
-                        folderId = foundUser.userInfo.folderId;
-                    }
+                    // res.files.forEach(function (folder) {
+                    //     console.log('Found file: ', folder.name, folder.id);
+                    // });
+                    // console.log("Files " + JSON.stringify(res))
+                    // for (let folder of res.data.files) {
+                    //     console.log('Found file: ', folder.name, folder.id);
+                    //     if (foundUser.userInfo.folderId === folder.id) {
+                    //         foundFolder = true;
+                    //         break;
+                    //     }
+                    // }
+                    pageToken = res.nextPageToken;
+                    callback();
                 }
-            })
-        } else {
-            folderId = await createFolder(auth, "Attendify", mongoID).id;
-        }
+            });
+        }, function () {
+            return !!pageToken;
+        }, async function (err) {
+            if (err) {
+                // Handle error
+                console.log(err);
+            }
+            // } else {
+            //     // All pages fetched
+            //     if (!foundFolder) {
+            //         console.log("Folder not found, creating folder...");
+            //         folderId = await createFolder(auth, "Attendify", mongoID).id;
+            //     }
+            //     else {
+            //         folderId = foundUser.userInfo.folderId;
+            //     }
+            // }
+        })
         const createResponse = await sheets.spreadsheets.create({
             resource: {
                 properties: {
@@ -493,10 +492,34 @@ app.post("/", async (req, res) => {
                 ]
             }
         });
-        await drive.files.update({
-            fileId: createResponse.data.spreadsheetId,
-            addParents: folderId,
-            removeParents: "root"
+        // await drive.files.update({
+        //     fileId: createResponse.data.spreadsheetId,
+        //     addParents: folderId,
+        //     removeParents: "root"
+        // });
+        const fileId = createResponse.data.spreadsheetId;
+        drive.files.get({
+            fileId: fileId,
+            fields: 'parents'
+        }, function (err, file) {
+            if (err) {
+                // Handle error
+                console.error(err);
+            } else {
+                // Move the file to the new folder
+                drive.files.update({
+                    fileId: fileId,
+                    addParents: folderId,
+                    fields: 'id, parents'
+                }, function (err, file) {
+                    if (err) {
+                        // Handle error
+                    } else {
+                        // File moved.
+                        console.log("File moved");
+                    }
+                });
+            }
         });
         let relevantData = participants.map(p => {
             let join_times_sheet = "";
@@ -506,7 +529,7 @@ app.post("/", async (req, res) => {
                 leave_times_sheet += p.leave_times[i][1] + ", ";
 
             }
-            return [p.user_name, Math.round(p.percent_attended), join_times_sheet, leave_times_sheet];
+            return [p.user_name, Math.round(p.percent_attended), join_times_sheet.slice(0, -2), leave_times_sheet.slice(0, -2)];
         });
         relevantData.unshift(['Username', '% Attended', 'Join Times', 'Leave Times'])
         const res = await sheets.spreadsheets.values.append({
@@ -551,7 +574,7 @@ app.post("/", async (req, res) => {
 
 });
 
-if (typeof(PhusionPassenger) !== 'undefined') {
+if (typeof (PhusionPassenger) !== 'undefined') {
     app.listen('passenger', () => {
         console.log("Attendify app listening on Passenger");
     });
