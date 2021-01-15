@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/Mrkr1sher/Attendify#readme",
   "dependencies": {
+    "async": "^3.2.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "googleapis": "^61.0.0",

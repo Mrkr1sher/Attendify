@@ -92,6 +92,19 @@ async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoI
     return res.data;
 }
 
+async function createMeeting(meeting) {
+    console.log(`${meeting.topic} started at time ${zone(meeting.start_time)[1]}`);
+    meeting.participants = [];
+    // Add this meeting to the array of meetings in this user document
+    User.findOneAndUpdate({ userId: meeting.host_id }, { $push: { "userInfo.meetings": meeting } }, null, (err) => {
+        if (err) console.log(err);
+    });
+}
+
+function zone(str) {
+    return new Date(str).toLocaleString("en-US", { timeZone: "America/New_York" }).split(", ");
+}
+
 app.get("/", (req, res) => { //authorizing them
 
     // Step 1: 
@@ -169,6 +182,7 @@ app.get("/", (req, res) => { //authorizing them
 // Sets up webhook for Zoom Deauthorization
 app.post("/zoomdeauth", async (req, res) => {
     if (req.headers.authorization === process.env.zoomVerificationToken) {
+        res.status(200).send();
         console.log(req.body);
         // check to see if the user exists in the DB
         const foundUser = await User.findOne({ userId: req.body.payload.user_id }).exec();
@@ -180,7 +194,7 @@ app.post("/zoomdeauth", async (req, res) => {
             "Attendify Deauthorized", foundUser.userInfo.gmail, foundUser.userInfo.gmail,
             "You have successfully deauthorized Attendify. Please be sure to remove Attendify's access to your Google account by " +
             "visiting https://myaccount.google.com/permissions.",
-            foundUser.userId)
+            foundUser.userId);
         console.log(`Deleted user ${foundUser.userInfo.name} from memory.`);
         // delete user from DB
         await User.deleteOne({ userId: foundUser.userId });
@@ -189,7 +203,6 @@ app.post("/zoomdeauth", async (req, res) => {
             if (err) throw err;
             console.log("Updated current-users.json!");
         });
-        res.status(200).end();
     }
 });
 
@@ -276,7 +289,6 @@ app.post("/", async (req, res) => {
     if (req.headers.authorization === process.env.zoomVerificationToken) {
         let meeting = webhook.payload.object;
         let person;
-        let i;
         let meetIndex;
         let participants;
         let idx;
@@ -284,12 +296,11 @@ app.post("/", async (req, res) => {
 
         switch (webhook.event) {
             case "meeting.started":
-                console.log(`${meeting.topic} started at time ${zone(meeting.start_time)[1]}`);
-                meeting.participants = [];
-                // Add this meeting to the array of meetings in this user document
-                User.findOneAndUpdate({ userId: meeting.host_id }, { $push: { "userInfo.meetings": meeting } }, null, (err) => {
-                    if (err) console.log(err);
-                });
+                foundUser = await User.findOne({ userId: meeting.host_id }).exec();
+                meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
+                if (meetIndex < 0) {
+                    await createMeeting(meeting);
+                }
                 break;
             case "meeting.ended":
                 let end = zone(meeting.end_time);
@@ -334,6 +345,18 @@ app.post("/", async (req, res) => {
                 // getting the user
                 foundUser = await User.findOne({ userId: meeting.host_id }).exec();
                 meetIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
+                if (meetIndex < 0) {
+                    let newMeeting = JSON.parse(JSON.stringify(meeting));
+                    delete newMeeting.participant;
+                    await createMeeting(newMeeting);
+                    person.join_times = [join_time];
+                    delete person.join_time;
+                    foundUser = await User.findOne({ userId: meeting.host_id }).exec();
+                    let newMeetingIndex = foundUser.userInfo.meetings.map(m => m.uuid).indexOf(meeting.uuid);
+                    foundUser.userInfo.meetings[newMeetingIndex].participants.push(person);
+                    foundUser.markModified("userInfo");
+                    break;
+                }
                 participants = foundUser.userInfo.meetings[meetIndex].participants;
                 idx = foundUser.userInfo.meetings[meetIndex].participants.map(p => p.id).indexOf(person.id);
 
@@ -568,10 +591,6 @@ app.post("/", async (req, res) => {
             p.percent_attended = Math.min(attended * 100 / (new Date(etime) - new Date(stime)), 100);
         }
     }
-    function zone(str) {
-        return new Date(str).toLocaleString("en-US", { timeZone: "America/New_York" }).split(", ");
-    }
-
 });
 
 if (typeof (PhusionPassenger) !== 'undefined') {
