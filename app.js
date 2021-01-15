@@ -8,6 +8,7 @@ const fs = require("fs");
 const request = require("request")
 // Run the express app
 const express = require("express")
+const axios = require("axios");
 const app = express()
 const https = require('https');
 const mongoose = require("mongoose");
@@ -218,11 +219,18 @@ app.get("/oauth2callback", async (req, res) => {
 
         let requiredScopes = ["email", "profile", "openid", "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/gmail.compose"]
 
+        let fulfilledScopes = true;
+
         for (let scope of requiredScopes) {
             if (!req.query.scope.includes(scope)) {
-                res.send("Required Scopes Not Authorized. Please reinstall with all scopes allowed.")
+                res.send("Required Scopes Not Authorized. Please reinstall with all scopes allowed.");
+                fulfilledScopes = false;
                 return;
             }
+        }
+
+        if (!fulfilledScopes) {
+            return;
         }
 
         // if state was previously there, delete it from the States collection
@@ -424,13 +432,24 @@ app.post("/", async (req, res) => {
             if (err) {
                 console.log(err);
             } else {
-                console.log('Folder Id: ', folder.data.id);
-                foundUser.userInfo.folderId = folder.data.id;
-                foundUser.markModified("userInfo");
-
-                await foundUser.save();
-
-                return folder;
+                axios
+                    .post(`https://www.googleapis.com/drive/v3/files/${folder.data.id}/watch`, {
+                        id: process.env.FOLDER_WATCH_UUID, // Your channel ID.
+                        type: "web_hook",
+                        address: `${process.env.NGROK}/folderWatcher`, // Your receiving URL.
+                    })
+                    .then(async res => {
+                        console.log(`statusCode: ${res.statusCode}`)
+                        // console.log(res)
+                        console.log('Folder Id: ', folder.data.id);
+                        foundUser.userInfo.folderId = folder.data.id;
+                        foundUser.markModified("userInfo");
+                        await foundUser.save();
+                        return folder;
+                    })
+                    .catch(error => {
+                        console.error(error)
+                    })
             }
         });
     }
@@ -592,6 +611,20 @@ app.post("/", async (req, res) => {
         }
     }
 });
+
+app.post("folderWatcher", (req, res) => {
+    console.log(req);
+    res.send();
+})
+
+app.get("/privacy", (req, res) => {
+    res.sendFile(__dirname + "/public/privacy.html");
+});
+
+app.get("/google0886a4684c242703.html", (req, res) => {
+    res.sendFile(__dirname + "/public/google0886a4684c242703.html");
+});
+
 
 if (typeof (PhusionPassenger) !== 'undefined') {
     app.listen('passenger', () => {
