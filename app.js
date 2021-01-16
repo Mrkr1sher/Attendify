@@ -14,6 +14,7 @@ const https = require('https');
 const mongoose = require("mongoose");
 const encrypt = require("mongoose-encryption");
 const async = require("async");
+const cron = require("node-cron");
 
 //google api
 const { google } = require("googleapis");
@@ -50,6 +51,51 @@ const stateSchema = new mongoose.Schema({
 
 const User = mongoose.model("USER", userSchema);
 const State = mongoose.model("STATE", stateSchema);
+
+async function restartWatchers() {
+    let allUsers = await User.find();
+
+    for (let user of allUsers) {
+        if (user.userInfo.folderId && user.userInfo.resourceId) {
+            console.log("Scheduling cron job for" + user.userInfo.folderId)
+            await cronScheduler(oauth2Client, user.userId, user.userInfo.googleCreds.refresh_token, user.userInfo.folderId, user.userInfo.resourceId);
+        }
+    }
+}
+
+restartWatchers().then(() => console.log("Restarted all watchers.")).catch(err => console.log(err));
+
+async function cronScheduler(auth, mongoId, refresh_token, folderId, resourceId) {
+    let requestBody = {
+        "kind": "api#channel",
+        "id": folderId,
+        "resourceId": folderId,
+        "resourceUri": folderId,
+        "type": "web_hook",
+        "address": `${process.env.NGROK}/folderWatcher`,
+        "expiration": Date.now() + 86400000
+    }
+    //* * * * *
+    //0 */6 * * *
+    cron.schedule('0 */6 * * *', async function() {
+        auth.setCredentials({
+            refresh_token: refresh_token
+        });
+        google.options({ auth });
+        console.log('Starting a watcher for every 6 hours');
+        await drive.channels.stop({
+            resource : {
+                id: folderId,
+                resourceId: resourceId
+            }
+        });
+        let response = await drive.files.watch({fileId : folderId, requestBody});
+        let foundUser = await User.findOne({userId : mongoId}).exec();
+        foundUser.userInfo.resourceId = response.data.resourceId;
+        foundUser.markModified("userInfo");
+        await foundUser.save();
+    }, { scheduled: true });
+}
 
 //Email function
 async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoID) {
@@ -420,7 +466,7 @@ app.post("/", async (req, res) => {
 
     // function to create drive folder
     async function createFolder(auth, title, mongoID) {
-        const foundUser = await User.findOne({ userId: mongoID });
+        let foundUser = await User.findOne({ userId: mongoID });
 
         auth.setCredentials({
             refresh_token: foundUser.userInfo.googleCreds.refresh_token
@@ -438,29 +484,28 @@ app.post("/", async (req, res) => {
                 console.log(err);
             } else {
                 let folderId = folder.data.id;
+                foundUser.userInfo.folderId = folder.data.id;
+                foundUser.markModified("userInfo");
+                await foundUser.save();
                 let requestBody = {
                     "kind": "api#channel",
-                    "id": process.env.FOLDER_WATCH_UUID,
+                    "id": folderId,
                     "resourceId": folderId,
                     "resourceUri": folderId,
                     "type": "web_hook",
                     "address": `${process.env.NGROK}/folderWatcher`,
-                    "payload": true,
-                    "params": {
-                        folderId: folderId
-                    }
+                    "expiration": Date.now() + 86400000
                 }
-                drive.files.watch({fileId : folderId, requestBody}, async (err, response) => {
-                    if (err) {
-                        console.log(`Drive API returned ${err}`)
-                    }
-                    console.log("Watcher enabled: " + response);
-                    console.log('Folder Id: ', folder.data.id);
-                    foundUser.userInfo.folderId = folder.data.id;
-                    foundUser.markModified("userInfo");
-                    await foundUser.save();
-                    return folder;
-                });
+                let response = await drive.files.watch({fileId : folderId, requestBody});
+                console.log("SDJKSDKHKJHFKJSKFJHKFSJJFHKSJFJSHF Watcher enabled: " + response.data.resourceId);
+                foundUser = await User.findOne({ userId: mongoID });
+                foundUser.userInfo.resourceId = response.data.resourceId;
+                foundUser.markModified("userInfo");
+                await foundUser.save();
+                await cronScheduler(auth, mongoID, foundUser.userInfo.googleCreds.refresh_token, folderId, response.data.resourceId);
+
+                console.log('Folder Id: ' +  folder.data.id);
+                return folder;
                 // axios
                 //     .post(`https://www.googleapis.com/drive/v3/files/${folder.data.id}/watch`, {
                 //         id: process.env.FOLDER_WATCH_UUID, // Your channel ID.
@@ -505,8 +550,7 @@ app.post("/", async (req, res) => {
         else {
             console.log("Folder found");
         }
-        foundUser = await User.findOne({ userId: mongoID });
-        folderId = foundUser.userInfo.folderId;
+
         // let pageToken = null;
         // Using the NPM module 'async'
         // async.doWhilst(function (callback) {
@@ -564,8 +608,8 @@ app.post("/", async (req, res) => {
                         properties: {
                             title: 'Attendance',
                             gridProperties: {
-                                rowCount: 20,
-                                columnCount: 5
+                                rowCount: participants.length + 1,
+                                columnCount: 4
                             }
                         }
                     }
@@ -578,19 +622,24 @@ app.post("/", async (req, res) => {
         //     removeParents: "root"
         // });
         const fileId = createResponse.data.spreadsheetId;
-        console.log("File ID" + fileId + "... About to add to folder")
+        foundUser = await User.findOne({ userId: mongoID});
+        console.log("The found user " + foundUser);
         drive.files.get({
             fileId: fileId,
             fields: 'parents'
-        }, function (err, file) {
+        }, async function (err, file) {
             if (err) {
                 // Handle error
                 console.error(err);
             } else {
                 // Move the file to the new folder
+                foundUser = await User.findOne({ userId: mongoID });
+                folderId = foundUser.userInfo.folderId;
+                console.log("File ID" + fileId + "... About to add to folder: " + folderId)
                 drive.files.update({
                     fileId: fileId,
                     addParents: folderId,
+                    removeParents: "root",
                     fields: 'id, parents'
                 }, function (err, file) {
                     if (err) {
@@ -660,9 +709,16 @@ app.post("/folderWatcher", async (req, res) => {
         folderId = folderId.substring(folderId.indexOf("/v3/files/") + 10, folderId.indexOf("?"));
         let foundUser = await User.findOne({"userInfo.folderId" : folderId}).exec();
         console.log("Found user" + foundUser);
-        console.log("FolderId: " + folderId);
+        console.log("Extracted folder ID from URI: " + folderId);
         if (foundUser) {
+            await drive.channels.stop({
+                resource : {
+                    id: folderId,
+                    resourceId: foundUser.userInfo.resourceId
+                }
+            });
             delete foundUser.userInfo.folderId;
+            delete foundUser.userInfo.resourceId;
             console.log("Deleted user's folderId")
             console.log(foundUser);
             foundUser.markModified("userInfo");
@@ -670,6 +726,7 @@ app.post("/folderWatcher", async (req, res) => {
         }
     }
 })
+
 
 app.get("/privacy", (req, res) => {
     res.sendFile(__dirname + "/public/privacy.html");
