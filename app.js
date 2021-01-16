@@ -53,44 +53,49 @@ const State = mongoose.model("STATE", stateSchema);
 
 //Email function
 async function sendEmail(auth, subject, senderEmail, recipientEmail, msg, mongoID) {
-    // giving refresh token to auth scheme
-    const foundUser = await User.findOne({ userId: mongoID }).exec();
-    auth.setCredentials({
-        refresh_token: foundUser.userInfo.googleCreds.refresh_token
-    });
-    // Obtain user credentials to use for the request
-    google.options({ auth });
+    try {
+        // giving refresh token to auth scheme
+        const foundUser = await User.findOne({ userId: mongoID }).exec();
+        auth.setCredentials({
+            refresh_token: foundUser.userInfo.googleCreds.refresh_token
+        });
+        // Obtain user credentials to use for the request
+        google.options({ auth });
 
-    // You can use UTF-8 encoding for the subject using the method below.
-    // You can also just use a plain string if you don't need anything fancy.
-    const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-    msg = `<p>Hey there ${foundUser.userInfo.name},</p> <br> <p>${msg}</p> <br> <p>Best,</p> <p>Aditya and Krish from Attendify</p>`
-    let messageParts = [
-        `From: Attendify <${senderEmail}>`,
-        `To: ${foundUser.userInfo.name} <${recipientEmail}>`,
-        'Content-Type: text/html; charset=utf-8',
-        'MIME-Version: 1.0',
-        `Subject: ${utf8Subject}`,
-        '',
-        msg,
-    ];
-    const message = messageParts.join('\n');
+        // You can use UTF-8 encoding for the subject using the method below.
+        // You can also just use a plain string if you don't need anything fancy.
+        const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
+        msg = `<p>Hey there ${foundUser.userInfo.name},</p> <br> <p>${msg}</p> <br> <p>Best,</p> <p>Aditya and Krish from Attendify</p>`
+        let messageParts = [
+            `From: Attendify <${senderEmail}>`,
+            `To: ${foundUser.userInfo.name} <${recipientEmail}>`,
+            'Content-Type: text/html; charset=utf-8',
+            'MIME-Version: 1.0',
+            `Subject: ${utf8Subject}`,
+            '',
+            msg,
+        ];
+        const message = messageParts.join('\n');
 
-    // The body needs to be base64url encoded.
-    const encodedMessage = Buffer.from(message)
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
+        // The body needs to be base64url encoded.
+        const encodedMessage = Buffer.from(message)
+            .toString('base64')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
 
-    const res = await gmail.users.messages.send({
-        userId: 'me',
-        requestBody: {
-            raw: encodedMessage,
-        },
-    });
-    console.log(res.data);
-    return res.data;
+        const res = await gmail.users.messages.send({
+            userId: 'me',
+            requestBody: {
+                raw: encodedMessage,
+            },
+        });
+        console.log("Email sent.")
+        return res.data;
+    }
+    catch (error) {
+        return error;
+    }
 }
 
 async function createMeeting(meeting) {
@@ -432,24 +437,48 @@ app.post("/", async (req, res) => {
             if (err) {
                 console.log(err);
             } else {
-                axios
-                    .post(`https://www.googleapis.com/drive/v3/files/${folder.data.id}/watch`, {
-                        id: process.env.FOLDER_WATCH_UUID, // Your channel ID.
-                        type: "web_hook",
-                        address: `${process.env.NGROK}/folderWatcher`, // Your receiving URL.
-                    })
-                    .then(async res => {
-                        console.log(`statusCode: ${res.statusCode}`)
-                        // console.log(res)
-                        console.log('Folder Id: ', folder.data.id);
-                        foundUser.userInfo.folderId = folder.data.id;
-                        foundUser.markModified("userInfo");
-                        await foundUser.save();
-                        return folder;
-                    })
-                    .catch(error => {
-                        console.error(error)
-                    })
+                let folderId = folder.data.id;
+                let requestBody = {
+                    "kind": "api#channel",
+                    "id": process.env.FOLDER_WATCH_UUID,
+                    "resourceId": folderId,
+                    "resourceUri": folderId,
+                    "type": "web_hook",
+                    "address": `${process.env.NGROK}/folderWatcher`,
+                }
+                drive.files.watch({fileId : folderId, requestBody}, async (err, response) => {
+                    if (err) {
+                        console.log(`Drive API returned ${err}`)
+                    }
+                    console.log("Watcher enabled: " + response);
+                    console.log('Folder Id: ', folder.data.id);
+                    foundUser.userInfo.folderId = folder.data.id;
+                    foundUser.markModified("userInfo");
+                    await foundUser.save();
+                    return folder;
+                });
+                // axios
+                //     .post(`https://www.googleapis.com/drive/v3/files/${folder.data.id}/watch`, {
+                //         id: process.env.FOLDER_WATCH_UUID, // Your channel ID.
+                //         type: "web_hook",
+                //         address: `${process.env.NGROK}/folderWatcher`, // Your receiving URL.
+                //     }, {
+                //         headers: {
+                //             'Authorization': `Bearer ${process.env}`,
+                //             'Content-Type': `application/json`
+                //         })
+                //     .then(async res => {
+                //         console.log(`statusCode: ${res.statusCode}`)
+                //         // console.log(res)
+                //         console.log('Folder Id: ', folder.data.id);
+                //         foundUser.userInfo.folderId = folder.data.id;
+                //         foundUser.markModified("userInfo");
+                //         await foundUser.save();
+                //         return folder;
+                //     })
+                //     .catch(error => {
+                //         console.error(error)
+                //     })
             }
         });
     }
@@ -466,56 +495,61 @@ app.post("/", async (req, res) => {
         let folderId;
         // before creating folder, check if folder exists
         if (!foundUser.userInfo.folderId) {
+            console.log("Folder doesn't exist... creating")
             await createFolder(auth, "Attendify", mongoID);
         }
+        else {
+            console.log("Folder found");
+        }
+        foundUser = await User.findOne({ userId: mongoID });
         folderId = foundUser.userInfo.folderId;
-        let pageToken = null;
+        // let pageToken = null;
         // Using the NPM module 'async'
-        async.doWhilst(function (callback) {
-            drive.files.list({
-                q: "mimeType='application/vnd.google-apps.folder'",
-                fields: 'nextPageToken, files(id, name)',
-                spaces: 'drive',
-                pageToken: pageToken
-            }, function (err, res) {
-                if (err) {
-                    // Handle error
-                    console.log(err);
-                    callback(err)
-                } else {
-                    // res.files.forEach(function (folder) {
-                    //     console.log('Found file: ', folder.name, folder.id);
-                    // });
-                    // console.log("Files " + JSON.stringify(res))
-                    // for (let folder of res.data.files) {
-                    //     console.log('Found file: ', folder.name, folder.id);
-                    //     if (foundUser.userInfo.folderId === folder.id) {
-                    //         foundFolder = true;
-                    //         break;
-                    //     }
-                    // }
-                    pageToken = res.nextPageToken;
-                    callback();
-                }
-            });
-        }, function () {
-            return !!pageToken;
-        }, async function (err) {
-            if (err) {
-                // Handle error
-                console.log(err);
-            }
-            // } else {
-            //     // All pages fetched
-            //     if (!foundFolder) {
-            //         console.log("Folder not found, creating folder...");
-            //         folderId = await createFolder(auth, "Attendify", mongoID).id;
-            //     }
-            //     else {
-            //         folderId = foundUser.userInfo.folderId;
-            //     }
-            // }
-        })
+        // async.doWhilst(function (callback) {
+        //     drive.files.list({
+        //         q: "mimeType='application/vnd.google-apps.folder'",
+        //         fields: 'nextPageToken, files(id, name)',
+        //         spaces: 'drive',
+        //         pageToken: pageToken
+        //     }, function (err, res) {
+        //         if (err) {
+        //             // Handle error
+        //             console.log(err);
+        //             callback(err)
+        //         } else {
+        //             // res.files.forEach(function (folder) {
+        //             //     console.log('Found file: ', folder.name, folder.id);
+        //             // });
+        //             // console.log("Files " + JSON.stringify(res))
+        //             // for (let folder of res.data.files) {
+        //             //     console.log('Found file: ', folder.name, folder.id);
+        //             //     if (foundUser.userInfo.folderId === folder.id) {
+        //             //         foundFolder = true;
+        //             //         break;
+        //             //     }
+        //             // }
+        //             pageToken = res.nextPageToken;
+        //             callback();
+        //         }
+        //     });
+        // }, function () {
+        //     return !!pageToken;
+        // }, async function (err) {
+        //     if (err) {
+        //         // Handle error
+        //         console.log(err);
+        //     }
+        //     // } else {
+        //     //     // All pages fetched
+        //     //     if (!foundFolder) {
+        //     //         console.log("Folder not found, creating folder...");
+        //     //         folderId = await createFolder(auth, "Attendify", mongoID).id;
+        //     //     }
+        //     //     else {
+        //     //         folderId = foundUser.userInfo.folderId;
+        //     //     }
+        //     // }
+        // })
         const createResponse = await sheets.spreadsheets.create({
             resource: {
                 properties: {
@@ -540,6 +574,7 @@ app.post("/", async (req, res) => {
         //     removeParents: "root"
         // });
         const fileId = createResponse.data.spreadsheetId;
+        console.log("File ID" + fileId + "... About to add to folder")
         drive.files.get({
             fileId: fileId,
             fields: 'parents'
@@ -612,9 +647,21 @@ app.post("/", async (req, res) => {
     }
 });
 
-app.post("folderWatcher", (req, res) => {
+app.post("/folderWatcher", async (req, res) => {
     console.log(req);
-    res.send();
+    res.status(200).send();
+    if (req.header("x-goog-resource-state") === "trash") {
+        console.log("Folder trashed")
+        let folderId = req.header("x-goog-resource-id");
+        let foundUser = await User.findOne({"userInfo.folderId" : folderId}).exec();
+        console.log("Found user" + foundUser);
+        console.log("FolderId" + folderId);
+        if (foundUser) {
+            delete foundUser.userInfo.folderId;
+            console.log("Deleted user's folderId")
+            await foundUser.save();
+        }
+    }
 })
 
 app.get("/privacy", (req, res) => {
