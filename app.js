@@ -445,6 +445,10 @@ app.post("/", async (req, res) => {
                     "resourceUri": folderId,
                     "type": "web_hook",
                     "address": `${process.env.NGROK}/folderWatcher`,
+                    "payload": true,
+                    "params": {
+                        folderId: folderId
+                    }
                 }
                 drive.files.watch({fileId : folderId, requestBody}, async (err, response) => {
                     if (err) {
@@ -648,17 +652,20 @@ app.post("/", async (req, res) => {
 });
 
 app.post("/folderWatcher", async (req, res) => {
-    console.log(req);
+    console.log("Folder watcher: " + JSON.stringify(req.headers, null, 2));
     res.status(200).send();
     if (req.header("x-goog-resource-state") === "trash") {
         console.log("Folder trashed")
-        let folderId = req.header("x-goog-resource-id");
+        let folderId = req.header("x-goog-resource-uri");
+        folderId = folderId.substring(folderId.indexOf("/v3/files/") + 10, folderId.indexOf("?"));
         let foundUser = await User.findOne({"userInfo.folderId" : folderId}).exec();
         console.log("Found user" + foundUser);
-        console.log("FolderId" + folderId);
+        console.log("FolderId: " + folderId);
         if (foundUser) {
             delete foundUser.userInfo.folderId;
             console.log("Deleted user's folderId")
+            console.log(foundUser);
+            foundUser.markModified("userInfo");
             await foundUser.save();
         }
     }
