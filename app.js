@@ -506,28 +506,6 @@ app.post("/", async (req, res) => {
 
                 console.log('Folder Id: ' +  folder.data.id);
                 return folder;
-                // axios
-                //     .post(`https://www.googleapis.com/drive/v3/files/${folder.data.id}/watch`, {
-                //         id: process.env.FOLDER_WATCH_UUID, // Your channel ID.
-                //         type: "web_hook",
-                //         address: `${process.env.NGROK}/folderWatcher`, // Your receiving URL.
-                //     }, {
-                //         headers: {
-                //             'Authorization': `Bearer ${process.env}`,
-                //             'Content-Type': `application/json`
-                //         })
-                //     .then(async res => {
-                //         console.log(`statusCode: ${res.statusCode}`)
-                //         // console.log(res)
-                //         console.log('Folder Id: ', folder.data.id);
-                //         foundUser.userInfo.folderId = folder.data.id;
-                //         foundUser.markModified("userInfo");
-                //         await foundUser.save();
-                //         return folder;
-                //     })
-                //     .catch(error => {
-                //         console.error(error)
-                //     })
             }
         });
     }
@@ -550,54 +528,7 @@ app.post("/", async (req, res) => {
         else {
             console.log("Folder found");
         }
-
-        // let pageToken = null;
-        // Using the NPM module 'async'
-        // async.doWhilst(function (callback) {
-        //     drive.files.list({
-        //         q: "mimeType='application/vnd.google-apps.folder'",
-        //         fields: 'nextPageToken, files(id, name)',
-        //         spaces: 'drive',
-        //         pageToken: pageToken
-        //     }, function (err, res) {
-        //         if (err) {
-        //             // Handle error
-        //             console.log(err);
-        //             callback(err)
-        //         } else {
-        //             // res.files.forEach(function (folder) {
-        //             //     console.log('Found file: ', folder.name, folder.id);
-        //             // });
-        //             // console.log("Files " + JSON.stringify(res))
-        //             // for (let folder of res.data.files) {
-        //             //     console.log('Found file: ', folder.name, folder.id);
-        //             //     if (foundUser.userInfo.folderId === folder.id) {
-        //             //         foundFolder = true;
-        //             //         break;
-        //             //     }
-        //             // }
-        //             pageToken = res.nextPageToken;
-        //             callback();
-        //         }
-        //     });
-        // }, function () {
-        //     return !!pageToken;
-        // }, async function (err) {
-        //     if (err) {
-        //         // Handle error
-        //         console.log(err);
-        //     }
-        //     // } else {
-        //     //     // All pages fetched
-        //     //     if (!foundFolder) {
-        //     //         console.log("Folder not found, creating folder...");
-        //     //         folderId = await createFolder(auth, "Attendify", mongoID).id;
-        //     //     }
-        //     //     else {
-        //     //         folderId = foundUser.userInfo.folderId;
-        //     //     }
-        //     // }
-        // })
+        
         const createResponse = await sheets.spreadsheets.create({
             resource: {
                 properties: {
